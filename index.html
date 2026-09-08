@@ -1,1858 +1,911 @@
-<!DOCTYPE html>
-<html lang="zh-HK">
+<!doctype html>
+<html lang="zh-TW">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>沈老師的教學設計與課堂遊戲小工具 🌸</title>
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Font Awesome Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- MathJax 3 配置與導入 -->
-    <script>
-        window.MathJax = {
-            tex: {
-                inlineMath: [['$', '$'], ['\\(', '\\)']],
-                displayMath: [['$$', '$$'], ['\\[', '\\]']],
-                processEscapes: true
-            },
-            options: {
-                skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
-            },
-            svg: { fontCache: 'global' }
-        };
-    </script>
-    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>九九乘法拔河對抗賽 - 雙人對戰版</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Noto+Sans+TC:wght@500;700;900&display=swap" rel="stylesheet">
+  <style>
+    * {
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+    body {
+      font-family: 'Noto Sans TC', sans-serif;
+      background: linear-gradient(180deg, #60a5fa 0%, #93c5fd 40%, #86efac 40%, #22c55e 100%);
+      background-attachment: fixed;
+    }
+    .font-game {
+      font-family: 'Fredoka', 'Noto Sans TC', sans-serif;
+    }
 
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=Nunito:wght@700;900&display=swap');
-        
-        :root {
-            --primary-pink: #ec4899;
-            --soft-pink: #fdf2f8;
-            --border-pink: #fbcfe8;
-        }
+    /* 雲朵飄動插畫動畫 */
+    @keyframes cloudDrift1 {
+      0% { transform: translateX(-150px); }
+      100% { transform: translateX(100vw); }
+    }
+    @keyframes cloudDrift2 {
+      0% { transform: translateX(-200px); }
+      100% { transform: translateX(105vw); }
+    }
+    .cloud-1 {
+      animation: cloudDrift1 45s linear infinite;
+    }
+    .cloud-2 {
+      animation: cloudDrift2 65s linear infinite;
+      animation-delay: -25s;
+    }
 
-        body {
-            font-family: 'Noto Sans TC', system-ui, -apple-system, sans-serif;
-            background: radial-gradient(circle at 10% 20%, #fff1f5 0%, #fce7f3 40%, #ede9fe 100%);
-            min-height: 100vh;
-            color: #334155;
-            -webkit-tap-highlight-color: transparent;
-            overflow-x: hidden;
-        }
+    /* 最後 20 秒全畫面邊框閃動效果 */
+    @keyframes urgentBorderFlash {
+      0%, 100% {
+        box-shadow: inset 0 0 0 8px rgba(239, 68, 68, 0.9), inset 0 0 35px rgba(239, 68, 68, 0.7);
+        border-color: rgba(239, 68, 68, 0.9);
+      }
+      50% {
+        box-shadow: inset 0 0 0 2px rgba(245, 158, 11, 0.3), inset 0 0 10px rgba(245, 158, 11, 0.2);
+        border-color: rgba(245, 158, 11, 0.3);
+      }
+    }
+    .urgent-flash {
+      animation: urgentBorderFlash 0.65s ease-in-out infinite !important;
+      opacity: 1 !important;
+    }
 
-        .font-game {
-            font-family: 'Nunito', 'Noto Sans TC', sans-serif;
-        }
-
-        /* 甜美柔和卡片陰影 */
-        .cute-card {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(8px);
-            border: 1.5px solid #fbcfe8;
-            border-radius: 24px;
-            box-shadow: 0 10px 30px -5px rgba(244, 114, 182, 0.15);
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-        }
-
-        /* 漸變主按鈕 */
-        .cute-btn-primary {
-            background: linear-gradient(135deg, #f43f5e 0%, #ec4899 50%, #d946ef 100%);
-            color: white;
-            box-shadow: 0 4px 15px rgba(236, 72, 153, 0.3);
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        .cute-btn-primary:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(236, 72, 153, 0.45);
-        }
-        .cute-btn-primary:active:not(:disabled) {
-            transform: translateY(0);
-        }
-        .cute-btn-primary:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            filter: grayscale(30%);
-        }
-
-        /* 次要白底粉邊按鈕 */
-        .cute-btn-secondary {
-            background: #ffffff;
-            color: #db2777;
-            border: 1.5px solid #fbcfe8;
-            box-shadow: 0 2px 8px rgba(244, 114, 182, 0.08);
-            transition: all 0.2s ease;
-        }
-        .cute-btn-secondary:hover:not(:disabled) {
-            background: #fdf2f8;
-            border-color: #f472b6;
-            transform: translateY(-1px);
-        }
-
-        /* 序號徽章 */
-        .step-badge {
-            background: linear-gradient(135deg, #f43f5e, #ec4899, #a855f7);
-            color: white;
-            width: 32px;
-            height: 32px;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 900;
-            font-size: 14px;
-            box-shadow: 0 4px 10px rgba(236, 72, 153, 0.25);
-            flex-shrink: 0;
-        }
-
-        /* 遊戲按鈕特製樣式 (加大熱區，適配電子白板點觸) */
-        .game-choice-btn {
-            background: #ffffff;
-            border: 2.5px solid #f9a8d4;
-            color: #831843;
-            min-height: 4.5rem;
-            cursor: pointer;
-            transition: all 0.15s ease;
-            user-select: none;
-        }
-        .game-choice-btn:hover:not(:disabled) {
-            background: #fdf2f8;
-            border-color: #ec4899;
-            transform: scale(1.015);
-        }
-        .game-choice-btn:active:not(:disabled) {
-            transform: scale(0.98);
-        }
-        .game-choice-btn.correct {
-            background: #dcfce7 !important;
-            border-color: #22c55e !important;
-            color: #15803d !important;
-        }
-        .game-choice-btn.wrong {
-            background: #fee2e2 !important;
-            border-color: #ef4444 !important;
-            color: #b91c1c !important;
-        }
-
-        /* 電子白板特化模式 (Whiteboard Presentation Mode) */
-        body.wb-mode {
-            background: #fdf4f8;
-        }
-        body.wb-mode .cute-card {
-            border-width: 2px;
-            border-radius: 28px;
-            box-shadow: 0 12px 35px rgba(236, 72, 153, 0.18);
-        }
-        body.wb-mode #appContainer {
-            max-width: 96vw !important;
-            width: 96vw !important;
-        }
-        body.wb-mode .math-content {
-            font-size: 1.05rem !important;
-            line-height: 2 !important;
-        }
-        body.wb-mode #gameQuestionText {
-            font-size: 1.85rem !important;
-            line-height: 1.5 !important;
-        }
-        body.wb-mode .game-choice-btn {
-            font-size: 1.25rem !important;
-            min-height: 5.5rem;
-            padding: 1rem 1.5rem;
-        }
-
-        /* 全螢幕沉浸遊戲彈窗 */
-        #gameBox.fullscreen-arena {
-            position: fixed;
-            inset: 0;
-            z-index: 100;
-            margin: 0 !important;
-            border-radius: 0 !important;
-            height: 100vh;
-            width: 100vw;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            padding: 2.5vh 3vw !important;
-            background: radial-gradient(circle at center, #ffffff 0%, #fff1f5 100%);
-            overflow-y: auto;
-        }
-
-        /* Markdown 解析與數學公式排版 */
-        .math-content h1, .math-content h2, .math-content h3 {
-            font-weight: 800;
-            color: #831843;
-            margin-top: 1rem;
-            margin-bottom: 0.5rem;
-        }
-        .math-content h2 {
-            border-bottom: 1.5px solid #fce7f3;
-            padding-bottom: 0.25rem;
-        }
-        .math-content ul {
-            list-style-type: disc;
-            padding-left: 1.25rem;
-            margin-bottom: 0.5rem;
-        }
-        .math-content ol {
-            list-style-type: decimal;
-            padding-left: 1.25rem;
-            margin-bottom: 0.5rem;
-        }
-        .math-content li {
-            margin-bottom: 0.25rem;
-        }
-        .math-content table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 0.75rem 0;
-            font-size: 0.88rem;
-        }
-        .math-content th, .math-content td {
-            border: 1px solid #fbcfe8;
-            padding: 8px 12px;
-            text-align: left;
-        }
-        .math-content th {
-            background: #fdf2f8;
-            color: #9d174d;
-        }
-
-        /* 打印優化 */
-        @media print {
-            body {
-                background: #ffffff;
-                color: #000000;
-            }
-            .no-print {
-                display: none !important;
-            }
-            .cute-card {
-                box-shadow: none;
-                border: 1px solid #ddd;
-                break-inside: avoid;
-            }
-        }
-    </style>
+    .rope-pattern {
+      background: repeating-linear-gradient(
+        45deg,
+        #b45309,
+        #b45309 8px,
+        #d97706 8px,
+        #d97706 16px,
+        #92400e 16px,
+        #92400e 24px
+      );
+      box-shadow: inset 0 3px 5px rgba(0,0,0,0.35), 0 3px 6px rgba(0,0,0,0.25);
+    }
+    .key-btn {
+      transition: all 0.08s ease;
+      box-shadow: 0 4px 0 rgba(0, 0, 0, 0.18);
+    }
+    .key-btn:active {
+      transform: translateY(3px);
+      box-shadow: 0 1px 0 rgba(0, 0, 0, 0.18);
+    }
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-6px); }
+      40%, 80% { transform: translateX(6px); }
+    }
+    .shake-anim {
+      animation: shake 0.35s ease-in-out;
+    }
+    @keyframes ropePullRed {
+      0%, 100% { transform: translateX(0); }
+      50% { transform: translateX(-12px); }
+    }
+    @keyframes ropePullBlue {
+      0%, 100% { transform: translateX(0); }
+      50% { transform: translateX(12px); }
+    }
+    .pull-red {
+      animation: ropePullRed 0.3s ease;
+    }
+    .pull-blue {
+      animation: ropePullBlue 0.3s ease;
+    }
+    .scratch-canvas {
+      touch-action: none;
+      cursor: crosshair;
+    }
+    /* 自訂捲軸 */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #94a3b8;
+      border-radius: 4px;
+    }
+  </style>
 </head>
-<body class="p-2 sm:p-4 md:p-6 lg:p-8 pb-28">
+<body class="text-slate-800 min-h-screen flex flex-col justify-between overflow-x-hidden p-2 sm:p-4 relative">
 
-    <!-- 主容器：寬屏白板自動展開，確保滿屏視野 -->
-    <div id="appContainer" class="w-full max-w-[95vw] 2xl:max-w-[1440px] mx-auto space-y-5 transition-all duration-300">
+  <!-- 最後 20 秒全螢幕閃爍外框層 -->
+  <div id="urgent-vignette" class="pointer-events-none fixed inset-0 z-40 transition-all duration-300 opacity-0 border-8 border-transparent"></div>
 
-        <!-- 頂部標題與工具欄 -->
-        <header class="cute-card p-4 sm:p-5 md:p-6 flex flex-col lg:flex-row items-center justify-between gap-4 border-2 border-pink-200">
-            <div class="flex items-center gap-3.5 sm:gap-4 text-left w-full lg:w-auto">
-                <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-gradient-to-tr from-pink-400 to-rose-300 text-white flex items-center justify-center text-2xl sm:text-3xl shrink-0 shadow-lg shadow-pink-200">
-                    🌸
-                </div>
-                <div>
-                    <div class="flex flex-wrap items-center gap-2">
-                        <h1 class="text-lg sm:text-xl md:text-2xl font-black text-pink-700 tracking-wide">沈老師的教學設計與課堂遊戲小工具</h1>
-                        <span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-700 border border-emerald-300">免金鑰隨開即用 ✨</span>
-                    </div>
-                    <p class="text-xs sm:text-sm text-pink-600 font-medium mt-1">
-                        🇭🇰 香港小學數學課程指引 · 電子白板/大屏自適應 · 離線智能庫 · 垂直分數 $\frac{a}{b}$
-                    </p>
-                </div>
-            </div>
-            
-            <div class="flex flex-wrap items-center gap-2 w-full lg:w-auto justify-end no-print">
-                <!-- 電子白板大屏模式切換按鈕 -->
-                <button onclick="toggleWhiteboardMode()" id="btnWhiteboardMode" class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-gradient-to-r from-purple-500 to-indigo-600 text-white shadow-md hover:brightness-105 flex items-center gap-1.5 transition">
-                    <i class="fa-solid fa-chalkboard-user"></i> <span id="wbModeText">電子白板大字模式</span>
-                </button>
-
-                <!-- 全螢幕切換 -->
-                <button onclick="toggleFullscreen()" class="px-3.5 py-2 bg-white border border-pink-200 text-pink-700 rounded-xl text-xs sm:text-sm font-bold hover:bg-pink-50 flex items-center gap-1.5 shadow-sm">
-                    <i class="fa-solid fa-expand"></i> 全螢幕
-                </button>
-
-                <div class="flex items-center bg-pink-50 p-1 rounded-2xl border border-pink-200 text-xs font-bold text-pink-800">
-                    <span class="px-2.5 py-1 bg-white text-emerald-700 rounded-xl shadow-xs flex items-center gap-1.5" id="engineModeBadge">
-                        <i class="fa-solid fa-bolt text-emerald-500"></i> 本地智能教研庫 (免 Key)
-                    </span>
-                    <button onclick="toggleKeyModal()" class="ml-1.5 px-2 py-1 text-pink-600 hover:text-pink-800 text-xs">
-                        <i class="fa-solid fa-gear"></i>
-                    </button>
-                </div>
-            </div>
-        </header>
-
-        <!-- 快速選題區 -->
-        <section class="cute-card p-3.5 sm:p-4 no-print bg-gradient-to-r from-pink-50/70 to-purple-50/70 border-pink-200">
-            <div class="flex items-center justify-between mb-2">
-                <span class="text-xs sm:text-sm font-bold text-pink-800 flex items-center gap-1.5">
-                    <i class="fa-solid fa-wand-magic-sparkles text-pink-500"></i> 常見香港小學精選課題快捷套用（按年級切換）：
-                </span>
-            </div>
-            <div class="flex flex-wrap gap-2" id="quickPickContainer">
-                <!-- 動態由 JavaScript 根據年級更新 -->
-            </div>
-        </section>
-
-        <!-- 第一部分：課題輸入與教材分析 -->
-        <section class="cute-card p-4 sm:p-6 space-y-4">
-            <div class="flex items-center gap-3 border-b border-pink-100 pb-3">
-                <div class="step-badge">1</div>
-                <div>
-                    <h2 class="text-base sm:text-lg font-bold text-pink-900">第一部分：年級課題與教材深度分析</h2>
-                    <p class="text-xs text-pink-500">免金鑰即時生成核心概念、香港課程目標與小學常見迷思陷阱</p>
-                </div>
-            </div>
-
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                <div>
-                    <label class="block text-xs sm:text-sm font-bold text-pink-800 mb-1.5 flex items-center gap-1">
-                        <i class="fa-solid fa-graduation-cap text-pink-500"></i> 選擇年級
-                    </label>
-                    <select id="gradeSelect" onchange="onGradeChange()" class="w-full p-2.5 sm:p-3 rounded-xl border border-pink-200 focus:outline-none focus:ring-2 focus:ring-pink-400 bg-white text-xs sm:text-sm font-semibold text-slate-700">
-                        <option value="小一 (Primary 1)">小一 (Primary 1)</option>
-                        <option value="小二 (Primary 2)">小二 (Primary 2)</option>
-                        <option value="小三 (Primary 3)" selected>小三 (Primary 3)</option>
-                        <option value="小四 (Primary 4)">小四 (Primary 4)</option>
-                        <option value="小五 (Primary 5)">小五 (Primary 5)</option>
-                        <option value="小六 (Primary 6)">小六 (Primary 6)</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-xs sm:text-sm font-bold text-pink-800 mb-1.5 flex items-center gap-1">
-                        <i class="fa-solid fa-book text-pink-500"></i> 數學課題名稱（可自訂輸入或點擊上方快捷鍵）
-                    </label>
-                    <input type="text" id="topicInput" value="同分母分數加法" placeholder="例如：平行線、容量與體積、除法（二）" class="w-full p-2.5 sm:p-3 rounded-xl border border-pink-200 focus:outline-none focus:ring-2 focus:ring-pink-400 bg-white text-xs sm:text-sm font-medium text-slate-800">
-                </div>
-            </div>
-
-            <button onclick="runPart1Analysis()" id="btnPart1" class="cute-btn-primary px-6 py-3 rounded-xl font-bold text-xs sm:text-sm w-full shadow flex items-center justify-center gap-2">
-                <i class="fa-solid fa-magnifying-glass"></i> 開始教材深度分析 (核心概念 · 目標 · 迷思)
-            </button>
-
-            <div id="part1Container" class="hidden space-y-3 pt-2">
-                <div class="flex justify-between items-center bg-pink-50/70 p-2.5 sm:p-3 rounded-xl border border-pink-200">
-                    <h3 class="text-xs sm:text-sm font-bold text-pink-900 flex items-center gap-1.5">
-                        <i class="fa-solid fa-clipboard-check text-pink-600"></i> 教材分析研析報告
-                    </h3>
-                    <div class="flex gap-2 no-print">
-                        <button onclick="copyElementText('part1Result')" class="cute-btn-secondary px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1">
-                            <i class="fa-regular fa-copy"></i> 複製
-                        </button>
-                        <button onclick="printFormattedDoc('part1Result', '第一部分：教材分析')" class="cute-btn-secondary px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1">
-                            <i class="fa-solid fa-print"></i> 列印
-                        </button>
-                    </div>
-                </div>
-                <div id="part1Result" class="math-content p-4 sm:p-6 rounded-2xl bg-white border border-pink-200 text-xs sm:text-sm leading-relaxed space-y-2"></div>
-                
-                <button onclick="unlockSection('part2Section')" class="w-full py-3 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl text-xs sm:text-sm font-bold hover:brightness-105 shadow flex items-center justify-center gap-1.5 transition">
-                    <i class="fa-solid fa-circle-check"></i> 確認分析，前往【第二部分：詳細教學計劃 (40分鐘教案)】
-                </button>
-            </div>
-        </section>
-
-        <!-- 第二部分：詳細教學計劃 -->
-        <section id="part2Section" class="cute-card p-4 sm:p-6 space-y-4 opacity-50 pointer-events-none transition-all duration-300">
-            <div class="flex items-center gap-3 border-b border-pink-100 pb-3">
-                <div class="step-badge">2</div>
-                <div>
-                    <h2 class="text-base sm:text-lg font-bold text-pink-900">第二部分：詳細教學計劃 (40分鐘課堂教案)</h2>
-                    <p class="text-xs text-pink-500">含引起動機、探究活動、合作學習、板書規劃與提問設計</p>
-                </div>
-            </div>
-
-            <button onclick="generateLessonPlan()" id="btnPart2" class="cute-btn-primary px-6 py-3 rounded-xl font-bold text-xs sm:text-sm w-full shadow flex items-center justify-center gap-2">
-                <i class="fa-solid fa-file-signature"></i> 生成 40 分鐘香港小學標準教案
-            </button>
-
-            <div id="part2Container" class="hidden space-y-3 pt-2">
-                <div class="flex justify-between items-center bg-pink-50/70 p-2.5 sm:p-3 rounded-xl border border-pink-200">
-                    <h3 class="text-xs sm:text-sm font-bold text-pink-900 flex items-center gap-1.5">
-                        <i class="fa-solid fa-book-open text-pink-600"></i> 教案設計詳情
-                    </h3>
-                    <div class="flex gap-2 no-print">
-                        <button onclick="copyElementText('part2Result')" class="cute-btn-secondary px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1">
-                            <i class="fa-regular fa-copy"></i> 複製教案
-                        </button>
-                        <button onclick="printFormattedDoc('part2Result', '第二部分：40分鐘教學計劃')" class="cute-btn-secondary px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1">
-                            <i class="fa-solid fa-print"></i> 列印教案
-                        </button>
-                    </div>
-                </div>
-                <div id="part2Result" class="math-content p-4 sm:p-6 rounded-2xl bg-white border border-pink-200 text-xs sm:text-sm leading-relaxed space-y-2 max-h-[36rem] overflow-y-auto"></div>
-
-                <!-- AI 共同備課修訂面板 -->
-                <div class="p-3.5 bg-gradient-to-r from-purple-50 to-pink-50 rounded-2xl border border-purple-200 space-y-2 no-print">
-                    <label class="block text-xs sm:text-sm font-bold text-purple-900 flex items-center gap-1">
-                        <i class="fa-solid fa-pen-fancy text-purple-600"></i> 課堂教研修訂建議：
-                    </label>
-                    <div class="flex flex-col sm:flex-row gap-2">
-                        <input type="text" id="part2ReviseInput" placeholder="例如：加強以薄餅實物操作、補充板書簡圖、強調約簡步驟..." class="flex-1 p-2.5 sm:p-3 rounded-xl border border-purple-200 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-purple-400 bg-white">
-                        <button onclick="reviseLessonPlan()" id="btnRevisePlan" class="px-5 py-2.5 bg-purple-600 text-white rounded-xl text-xs sm:text-sm font-bold hover:bg-purple-700 shrink-0 shadow flex items-center justify-center gap-1">
-                            <i class="fa-solid fa-rotate"></i> 修訂教案
-                        </button>
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1 no-print">
-                    <button onclick="unlockSection('part3Section')" class="w-full py-3 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl text-xs sm:text-sm font-bold hover:brightness-105 shadow flex items-center justify-center gap-1.5 transition">
-                        <i class="fa-solid fa-arrow-down"></i> 解鎖【第三部分：分層工作紙】
-                    </button>
-                    <button onclick="unlockSection('part5Section')" class="w-full py-3 bg-gradient-to-r from-pink-500 to-rose-600 text-white rounded-xl text-xs sm:text-sm font-bold hover:brightness-105 shadow flex items-center justify-center gap-1.5 transition">
-                        <i class="fa-solid fa-gamepad"></i> 直接開啟【電子白板課堂遊戲】
-                    </button>
-                </div>
-            </div>
-        </section>
-
-        <!-- 第三部分：三層分層工作紙 -->
-        <section id="part3Section" class="cute-card p-4 sm:p-6 space-y-4 opacity-50 pointer-events-none transition-all duration-300">
-            <div class="flex items-center gap-3 border-b border-pink-100 pb-3">
-                <div class="step-badge">3</div>
-                <div>
-                    <h2 class="text-base sm:text-lg font-bold text-pink-900">第三部分：三層分層工作紙設計</h2>
-                    <p class="text-xs text-pink-500">落實因材施教：初階基礎鞏固、中階生活情境、高階思維突破</p>
-                </div>
-            </div>
-
-            <button onclick="generateWorksheet()" id="btnPart3" class="cute-btn-primary px-6 py-3 rounded-xl font-bold text-xs sm:text-sm w-full shadow flex items-center justify-center gap-2">
-                <i class="fa-solid fa-layer-group"></i> 一鍵生成三層分層工作紙 (垂直分數 $\frac{a}{b}$ 格式)
-            </button>
-
-            <div id="part3Container" class="hidden space-y-3 pt-2">
-                <div class="flex justify-between items-center bg-pink-50/70 p-2.5 sm:p-3 rounded-xl border border-pink-200">
-                    <h3 class="text-xs sm:text-sm font-bold text-pink-900 flex items-center gap-1.5">
-                        <i class="fa-solid fa-file-lines text-pink-600"></i> 三層分層工作紙 (附解題思路與評分標準)
-                    </h3>
-                    <div class="flex gap-2 no-print">
-                        <button onclick="copyElementText('part3Result')" class="cute-btn-secondary px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1">
-                            <i class="fa-regular fa-copy"></i> 複製題目
-                        </button>
-                        <button onclick="printFormattedDoc('part3Result', '第三部分：分層工作紙')" class="cute-btn-secondary px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1">
-                            <i class="fa-solid fa-print"></i> 列印工作紙
-                        </button>
-                    </div>
-                </div>
-                <div id="part3Result" class="math-content p-4 sm:p-6 rounded-2xl bg-white border border-pink-200 text-xs sm:text-sm leading-relaxed space-y-2"></div>
-
-                <div class="flex gap-2 no-print">
-                    <button onclick="unlockSection('part4Section')" class="w-full py-3 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl text-xs sm:text-sm font-bold hover:brightness-105 shadow flex items-center justify-center gap-1.5 transition">
-                        <i class="fa-solid fa-arrow-down"></i> 解鎖【第四部分：延伸筆記與自學任務】
-                    </button>
-                </div>
-            </div>
-        </section>
-
-        <!-- 第四部分：延伸學習與溫習筆記 -->
-        <section id="part4Section" class="cute-card p-4 sm:p-6 space-y-4 opacity-50 pointer-events-none transition-all duration-300">
-            <div class="flex items-center gap-3 border-b border-pink-100 pb-3">
-                <div class="step-badge">4</div>
-                <div>
-                    <h2 class="text-base sm:text-lg font-bold text-pink-900">第四部分：延伸學習任務與溫習筆記頁</h2>
-                    <p class="text-xs text-pink-500">課後鞏固、自主探究專案、易錯防雷提醒與親子數學小挑戰</p>
-                </div>
-            </div>
-
-            <button onclick="generateExtension()" id="btnPart4" class="cute-btn-primary px-6 py-3 rounded-xl font-bold text-xs sm:text-sm w-full shadow flex items-center justify-center gap-2">
-                <i class="fa-solid fa-house-laptop"></i> 生成課後延伸任務與精華筆記頁
-            </button>
-
-            <div id="part4Container" class="hidden space-y-3 pt-2">
-                <div class="flex justify-between items-center bg-pink-50/70 p-2.5 sm:p-3 rounded-xl border border-pink-200">
-                    <h3 class="text-xs sm:text-sm font-bold text-pink-900 flex items-center gap-1.5">
-                        <i class="fa-solid fa-book-bookmark text-pink-600"></i> 延伸學習與溫習精華
-                    </h3>
-                    <div class="flex gap-2 no-print">
-                        <button onclick="copyElementText('part4Result')" class="cute-btn-secondary px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1">
-                            <i class="fa-regular fa-copy"></i> 複製
-                        </button>
-                        <button onclick="printFormattedDoc('part4Result', '第四部分：延伸溫習筆記')" class="cute-btn-secondary px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1">
-                            <i class="fa-solid fa-print"></i> 列印筆記
-                        </button>
-                    </div>
-                </div>
-                <div id="part4Result" class="math-content p-4 sm:p-6 rounded-2xl bg-white border border-pink-200 text-xs sm:text-sm leading-relaxed space-y-2"></div>
-
-                <div class="no-print">
-                    <button onclick="unlockSection('part5Section')" class="w-full py-3 bg-gradient-to-r from-pink-500 to-purple-600 text-white rounded-xl text-xs sm:text-sm font-bold hover:brightness-105 shadow flex items-center justify-center gap-1.5 transition">
-                        <i class="fa-solid fa-gamepad"></i> 進入【第五部分：課堂互動趣味闖關小遊戲】 🎮
-                    </button>
-                </div>
-            </div>
-        </section>
-
-        <!-- 第五部分：課堂趣味闖關小遊戲引擎 (專屬電子白板強化) -->
-        <section id="part5Section" class="cute-card p-4 sm:p-6 space-y-5 border-2 border-purple-300 shadow-xl">
-            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-pink-100 pb-3">
-                <div class="flex items-center gap-3">
-                    <div class="step-badge" style="background: linear-gradient(135deg, #a855f7, #ec4899);">5</div>
-                    <div>
-                        <div class="flex items-center gap-2">
-                            <h2 class="text-base sm:text-lg font-bold text-purple-900 font-game">課堂趣味闖關小遊戲 (電子白板 / 智慧大屏全屏專用)</h2>
-                            <span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-purple-100 text-purple-700">互動遊戲引擎</span>
-                        </div>
-                        <p class="text-xs text-pink-500">支援全班搶答、觸控筆大字作答、計時倒數與即時音效反饋！</p>
-                    </div>
-                </div>
-                <div class="flex items-center gap-2 self-end sm:self-auto">
-                    <button onclick="toggleGameFullscreenArena()" id="btnArenaFullscreen" class="text-xs sm:text-sm px-3 py-1.5 rounded-xl border border-purple-300 text-purple-800 bg-purple-50 hover:bg-purple-100 font-bold flex items-center gap-1.5 shadow-sm">
-                        <i class="fa-solid fa-tv"></i> 白板獨立滿屏
-                    </button>
-                    <button onclick="toggleAudioMute()" id="muteBtn" class="text-xs sm:text-sm px-3 py-1.5 rounded-xl border border-purple-200 text-purple-700 bg-white hover:bg-purple-50 font-bold">
-                        <i class="fa-solid fa-volume-high"></i> 音效開
-                    </button>
-                </div>
-            </div>
-
-            <!-- 遊戲控制器與操作按鈕 -->
-            <div class="flex flex-col sm:flex-row gap-2.5 no-print">
-                <button onclick="generateCustomGame()" id="btnGenerateGame" class="flex-1 py-3.5 bg-gradient-to-r from-purple-600 via-pink-600 to-rose-500 text-white font-bold rounded-2xl text-xs sm:text-base shadow-md hover:brightness-105 flex items-center justify-center gap-2">
-                    <i class="fa-solid fa-dice text-yellow-300"></i> 為此課題生成 AI 課堂闖關遊戲
-                </button>
-                <button onclick="startPresetGame()" class="px-5 py-3.5 bg-white border-2 border-purple-200 text-purple-700 font-bold rounded-2xl text-xs sm:text-sm hover:bg-purple-50 shrink-0">
-                    <i class="fa-solid fa-play mr-1"></i> 試玩預設題目
-                </button>
-            </div>
-
-            <!-- 遊戲進行視窗 (Game Box) -->
-            <div id="gameBox" class="rounded-3xl p-4 sm:p-7 md:p-8 bg-gradient-to-b from-white to-pink-50/50 border-2 border-pink-200 space-y-6">
-                
-                <!-- 遊戲狀態看板 (大字號，方便白板後排觀看) -->
-                <div class="flex justify-between items-center bg-white p-3 sm:p-4 rounded-2xl border border-pink-100 shadow-sm font-game">
-                    <div class="flex items-center gap-2">
-                        <span class="text-xs sm:text-sm font-bold text-slate-500">關卡:</span>
-                        <span id="gameProgressText" class="text-base sm:text-lg font-black text-pink-600">第 1 / 5 題</span>
-                    </div>
-                    <div class="flex items-center gap-4 sm:gap-6">
-                        <div class="flex items-center gap-1.5">
-                            <i class="fa-solid fa-star text-amber-400 text-base sm:text-lg"></i>
-                            <span class="text-xs sm:text-sm font-bold text-slate-500">得分:</span>
-                            <span id="gameScoreText" class="text-lg sm:text-2xl font-black text-purple-700">0</span>
-                        </div>
-                        <div class="flex items-center gap-1.5 bg-rose-50 px-3 py-1 rounded-xl border border-rose-100">
-                            <i class="fa-regular fa-clock text-rose-500 text-base"></i>
-                            <span id="gameTimerText" class="text-sm sm:text-lg font-black text-rose-600">25s</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 進度條 -->
-                <div class="w-full bg-pink-100 rounded-full h-3 overflow-hidden shadow-inner">
-                    <div id="gameProgressBar" class="bg-gradient-to-r from-pink-500 to-purple-600 h-3 rounded-full transition-all duration-300" style="width: 20%"></div>
-                </div>
-
-                <!-- 題目顯示區塊 (支援電子白板遠距清晰閱讀) -->
-                <div class="text-center py-5 px-3 min-h-[110px] flex flex-col items-center justify-center bg-white/60 rounded-2xl border border-pink-100">
-                    <span id="gameLevelBadge" class="text-xs sm:text-sm font-bold px-3.5 py-1 rounded-full bg-pink-100 text-pink-700 mb-2.5">課堂趣味挑戰</span>
-                    <div id="gameQuestionText" class="text-xl sm:text-2xl md:text-3xl font-black text-slate-800 tracking-wide font-game leading-relaxed">
-                        計算：$\frac{2}{7} + \frac{3}{7} = ?$
-                    </div>
-                </div>
-
-                <!-- 選項按鈕區 (大熱區，支援學生上前點觸) -->
-                <div id="gameChoicesGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4">
-                    <!-- 動態由 JavaScript 生成選項 -->
-                </div>
-
-                <!-- 答案解釋與下一題按鈕 -->
-                <div id="gameFeedbackBox" class="hidden p-4 sm:p-5 rounded-2xl bg-white border-2 border-pink-200 text-xs sm:text-sm space-y-3 shadow-md">
-                    <div id="gameFeedbackStatus" class="font-bold text-sm sm:text-base flex items-center gap-2"></div>
-                    <div id="gameFeedbackExplanation" class="text-slate-700 leading-relaxed text-xs sm:text-sm"></div>
-                    <button onclick="nextGameQuestion()" id="btnNextQuestion" class="w-full py-3.5 cute-btn-primary rounded-xl font-bold text-xs sm:text-sm shadow-md mt-2 flex items-center justify-center gap-2">
-                        <span>下一題</span> <i class="fa-solid fa-arrow-right"></i>
-                    </button>
-                </div>
-
-                <!-- 結算畫面 (初始隱藏) -->
-                <div id="gameOverScreen" class="hidden text-center py-8 space-y-4">
-                    <div class="text-6xl animate-bounce">🏆</div>
-                    <h3 class="text-2xl sm:text-3xl font-black text-pink-800">全班闖關完成！太棒了！</h3>
-                    <p id="gameOverSummary" class="text-base sm:text-lg font-medium text-slate-700 max-w-lg mx-auto leading-relaxed"></p>
-                    <div class="flex flex-wrap justify-center gap-3 pt-3">
-                        <button onclick="restartCurrentGame()" class="cute-btn-primary px-7 py-3 rounded-xl font-bold text-xs sm:text-sm shadow-md">
-                            <i class="fa-solid fa-rotate-left mr-1"></i> 再次挑戰
-                        </button>
-                        <button onclick="generateCustomGame()" class="cute-btn-secondary px-7 py-3 rounded-xl font-bold text-xs sm:text-sm shadow-md">
-                            <i class="fa-solid fa-sparkles mr-1"></i> 生成全新題庫
-                        </button>
-                        <button onclick="toggleGameFullscreenArena()" class="px-5 py-3 rounded-xl bg-slate-100 text-slate-700 font-bold text-xs sm:text-sm hover:bg-slate-200 shadow-xs">
-                            <i class="fa-solid fa-compress mr-1"></i> 退出滿屏
-                        </button>
-                    </div>
-                </div>
-
-            </div>
-        </section>
-
+  <!-- 背景圖畫插圖裝飾（天空白雲、遠處綠山坡、跑道與運動會彩旗） -->
+  <div class="fixed inset-0 pointer-events-none -z-10 overflow-hidden">
+    <!-- 漂浮白雲插圖 -->
+    <div class="cloud-1 absolute top-4 left-0 opacity-80">
+      <svg width="140" height="50" viewBox="0 0 140 50" fill="white">
+        <path d="M20,40 Q10,40 10,30 Q10,18 25,18 Q30,6 48,10 Q60,2 75,10 Q90,5 98,18 Q115,18 115,30 Q115,40 105,40 Z" />
+      </svg>
+    </div>
+    <div class="cloud-2 absolute top-14 left-0 opacity-70">
+      <svg width="180" height="60" viewBox="0 0 180 60" fill="white">
+        <path d="M25,50 Q12,50 12,38 Q12,22 30,22 Q38,8 60,12 Q75,2 95,12 Q115,6 125,22 Q145,22 145,38 Q145,50 130,50 Z" />
+      </svg>
     </div>
 
-    <!-- 自訂 Toast 通知組件 (代替 alert) -->
-    <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+    <!-- 運動會歡樂三角旗幟串 (Bunting Flags) -->
+    <svg class="absolute top-0 left-0 w-full h-12" preserveAspectRatio="none" viewBox="0 0 1000 60">
+      <path d="M0,8 Q250,22 500,8 Q750,22 1000,8" fill="none" stroke="#fed7aa" stroke-width="2" />
+      <!-- 彩旗 -->
+      <polygon points="40,9 65,9 52,38" fill="#ef4444" />
+      <polygon points="90,11 115,11 102,40" fill="#3b82f6" />
+      <polygon points="140,13 165,13 152,42" fill="#f59e0b" />
+      <polygon points="190,14 215,14 202,43" fill="#10b981" />
+      <polygon points="240,15 265,15 252,44" fill="#ec4899" />
+      <polygon points="290,14 315,14 302,43" fill="#8b5cf6" />
+      <polygon points="340,13 365,13 352,42" fill="#ef4444" />
+      <polygon points="390,11 415,11 402,40" fill="#3b82f6" />
+      <polygon points="440,9 465,9 452,38" fill="#f59e0b" />
+      <polygon points="490,8 515,8 502,37" fill="#10b981" />
+      <polygon points="540,9 565,9 552,38" fill="#ec4899" />
+      <polygon points="590,11 615,11 602,40" fill="#8b5cf6" />
+      <polygon points="640,13 665,13 652,42" fill="#ef4444" />
+      <polygon points="690,14 715,14 702,43" fill="#3b82f6" />
+      <polygon points="740,15 765,15 752,44" fill="#f59e0b" />
+      <polygon points="790,14 815,14 802,43" fill="#10b981" />
+      <polygon points="840,13 865,13 852,42" fill="#ec4899" />
+      <polygon points="890,11 915,11 902,40" fill="#8b5cf6" />
+      <polygon points="940,9 965,9 952,38" fill="#ef4444" />
+    </svg>
 
-    <!-- 金鑰設定彈窗 (客製化 Modal，安全且不使用 browser alert) -->
-    <div id="keyModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-        <div class="cute-card bg-white p-6 max-w-md w-full space-y-4 border-2 border-pink-300 shadow-2xl">
-            <div class="flex justify-between items-center border-b border-pink-100 pb-3">
-                <h3 class="text-sm font-bold text-pink-800 flex items-center gap-2">
-                    <i class="fa-solid fa-sliders text-pink-500"></i> 生成引擎與金鑰設定
-                </h3>
-                <button onclick="toggleKeyModal()" class="text-slate-400 hover:text-slate-600 text-base font-bold p-1">✕</button>
-            </div>
+    <!-- 草坪與紅色田徑跑道插畫線條 -->
+    <div class="absolute bottom-0 inset-x-0 h-44 bg-gradient-to-t from-emerald-600 via-green-500 to-green-400 opacity-90"></div>
+    <div class="absolute bottom-0 inset-x-0 h-10 bg-amber-800/20 border-t-2 border-white/40"></div>
+  </div>
 
-            <div class="space-y-2">
-                <div class="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 leading-relaxed">
-                    <strong>💡 目前模式：</strong> 系統已預載完善的香港小學數學教研庫，<strong>不需填寫任何金鑰</strong>即可完整生成各級教案、工作紙與闖關遊戲！
-                </div>
-                <p class="text-xs text-slate-600 leading-relaxed">
-                    若希望啟用 Gemini 大模型聯網自由發揮，可在此貼上 Google AI Studio 的 API Key：
-                </p>
-                <input type="password" id="customApiKeyInput" placeholder="選填：AIzaSy... (留空即使用離線智能庫)" class="w-full p-2.5 rounded-xl border border-pink-200 text-xs focus:outline-none focus:ring-2 focus:ring-pink-400 bg-pink-50/40">
-            </div>
+  <!-- 頂部控制列 -->
+  <header class="max-w-4xl mx-auto w-full flex flex-col items-center gap-2 relative z-10">
+    <div class="w-full flex items-center justify-between px-2">
+      <div class="flex items-center gap-2 bg-white/90 backdrop-blur-md px-3 py-1.5 rounded-2xl shadow-md border border-amber-200">
+        <span class="text-2xl sm:text-3xl">🪢</span>
+        <h1 class="text-xl sm:text-2xl font-black text-amber-800 tracking-wide font-game">乘法拔河大對決</h1>
+      </div>
+      
+      <!-- 計時器 -->
+      <div id="timer-badge" class="bg-white/95 backdrop-blur-md border-2 border-amber-300 rounded-full px-4 py-1 flex items-center gap-2 shadow-md transition-all">
+        <span class="text-sm font-bold text-slate-600">⏱️ 剩餘時間</span>
+        <span id="timer-display" class="font-game font-black text-2xl sm:text-3xl text-amber-600 tracking-wider">180</span>
+        <span class="text-xs text-slate-500 font-bold">秒</span>
+      </div>
+    </div>
 
-            <div id="testResultMsg" class="text-xs p-2.5 rounded-xl hidden"></div>
+    <!-- 難度選擇標籤 -->
+    <div class="flex gap-2 w-full justify-center">
+      <button id="lvl-1" onclick="changeLevel(1)" class="level-tab flex-1 sm:flex-initial text-xs sm:text-sm font-bold px-3 sm:px-5 py-1.5 rounded-full border-2 border-amber-500 bg-amber-400 text-amber-950 shadow-md transition-all">
+        Lv.1 九九乘法
+      </button>
+      <button id="lvl-2" onclick="changeLevel(2)" class="level-tab flex-1 sm:flex-initial text-xs sm:text-sm font-bold px-3 sm:px-5 py-1.5 rounded-full border-2 border-white/80 bg-white/80 text-slate-700 hover:bg-white transition-all shadow">
+        Lv.2 兩位×一位
+      </button>
+      <button id="lvl-3" onclick="changeLevel(3)" class="level-tab flex-1 sm:flex-initial text-xs sm:text-sm font-bold px-3 sm:px-5 py-1.5 rounded-full border-2 border-white/80 bg-white/80 text-slate-700 hover:bg-white transition-all shadow">
+        Lv.3 三位×一位
+      </button>
+    </div>
+  </header>
 
-            <div class="flex gap-2 pt-2">
-                <button onclick="testKeyConnection()" id="btnTestKey" class="flex-1 py-2 bg-pink-100 text-pink-700 rounded-xl text-xs font-bold hover:bg-pink-200 transition">
-                    <i class="fa-solid fa-plug"></i> 測試金鑰
-                </button>
-                <button onclick="saveCustomKey()" class="flex-1 py-2 cute-btn-primary rounded-xl text-xs font-bold shadow">
-                    <i class="fa-solid fa-floppy-disk"></i> 保存設定
-                </button>
-            </div>
+  <!-- 拔河競技場與比分 -->
+  <section class="max-w-4xl mx-auto w-full my-1 sm:my-2 relative z-10">
+    <!-- 雙方計分 -->
+    <div class="flex justify-between items-end px-3 mb-2 font-game">
+      <div class="flex items-center gap-2 bg-white/90 backdrop-blur px-3 py-1 rounded-xl shadow border border-red-200">
+        <span class="text-2xl filter drop-shadow">🔴</span>
+        <div>
+          <div class="text-xs font-bold text-red-600">紅隊得分</div>
+          <div id="red-score" class="text-2xl sm:text-3xl font-black text-red-600 leading-tight">0</div>
         </div>
+      </div>
+      <div class="text-center pb-1">
+        <span class="text-xs font-bold px-3 py-1 rounded-full bg-white/95 text-slate-700 shadow border border-slate-200">🚩 目標：拉過決勝紅旗！</span>
+      </div>
+      <div class="flex items-center gap-2 flex-row-reverse text-right bg-white/90 backdrop-blur px-3 py-1 rounded-xl shadow border border-blue-200">
+        <span class="text-2xl filter drop-shadow">🔵</span>
+        <div>
+          <div class="text-xs font-bold text-blue-600">藍隊得分</div>
+          <div id="blue-score" class="text-2xl sm:text-3xl font-black text-blue-600 leading-tight">0</div>
+        </div>
+      </div>
     </div>
 
-    <script>
-        /**
-         * 全局狀態變數
-         */
-        const apiKey = "";
-        let part1Data = "";
-        let lessonPlanData = "";
-        let audioMuted = false;
-        let isWhiteboardMode = false;
+    <!-- 拔河繩索與人物互動可視化 (採用草地運動場沙坑設計) -->
+    <div class="relative bg-white/90 backdrop-blur-md rounded-2xl p-3 sm:p-4 border-2 border-amber-300 shadow-xl overflow-hidden">
+      <!-- 拔河場地標線 -->
+      <div class="absolute inset-x-0 top-1/2 -translate-y-1/2 flex justify-between px-6 pointer-events-none opacity-40">
+        <div class="w-1 h-16 bg-red-500 rounded-full"></div>
+        <div class="w-1 h-20 bg-amber-500 rounded-full"></div>
+        <div class="w-1 h-16 bg-blue-500 rounded-full"></div>
+      </div>
 
-        // 電子白板大字與全屏切換
-        function toggleWhiteboardMode() {
-            isWhiteboardMode = !isWhiteboardMode;
-            document.body.classList.toggle('wb-mode', isWhiteboardMode);
-            const btn = document.getElementById('wbModeText');
-            if (isWhiteboardMode) {
-                btn.innerText = '恢復標準字體';
-                showToast('已切換至【電子白板大字模式】，適合投影與大屏！', 'success');
-            } else {
-                btn.innerText = '電子白板大字模式';
-                showToast('已恢復標準視圖模式', 'info');
-            }
-            triggerMathRender();
+      <!-- 繩索本體軌道 -->
+      <div id="tug-stage" class="relative h-14 flex items-center justify-center transition-transform duration-200">
+        <!-- 繩索條 -->
+        <div class="absolute left-8 right-8 h-4 rounded-full rope-pattern border-2 border-amber-900 z-10"></div>
+
+        <!-- 左邊紅隊拉扯選手插圖 -->
+        <div class="absolute left-2 top-1/2 -translate-y-1/2 z-20 flex items-center">
+          <div class="text-2xl sm:text-3xl transform -scale-x-100">🏃‍♂️</div>
+          <div class="text-2xl sm:text-3xl transform -scale-x-100 -ml-3">🤼</div>
+        </div>
+
+        <!-- 拔河中心標記（動態左右移動） -->
+        <div id="rope-marker" class="absolute top-1/2 -translate-y-1/2 z-30 transition-all duration-300 ease-out flex flex-col items-center" style="left: 50%;">
+          <div class="w-7 h-7 rounded-full bg-amber-400 border-2 border-red-500 shadow-lg flex items-center justify-center font-bold text-red-950 text-xs font-game animate-pulse">
+            ★
+          </div>
+          <div class="w-3.5 h-5 bg-red-600 rounded-b -mt-1 shadow-md"></div>
+        </div>
+
+        <!-- 右邊藍隊拉扯選手插圖 -->
+        <div class="absolute right-2 top-1/2 -translate-y-1/2 z-20 flex items-center">
+          <div class="text-2xl sm:text-3xl -mr-3">🤼</div>
+          <div class="text-2xl sm:text-3xl">🏃</div>
+        </div>
+      </div>
+
+      <!-- 刻度提示 -->
+      <div class="flex justify-between text-[11px] font-bold text-slate-500 px-4 mt-1">
+        <span class="text-red-600 font-extrabold">◄ 紅隊勝區</span>
+        <span class="text-amber-700">中線</span>
+        <span class="text-blue-600 font-extrabold">藍隊勝區 ►</span>
+      </div>
+    </div>
+
+    <!-- 當前乘法題目顯示 -->
+    <div class="text-center my-2 sm:my-3">
+      <div class="inline-block bg-white/95 backdrop-blur-md px-8 py-2 rounded-2xl border-2 border-amber-400 shadow-lg">
+        <div class="text-xs font-bold text-slate-500 mb-0.5">題目爭奪中 (答對拉動繩索)</div>
+        <div id="question-text" class="text-3xl sm:text-5xl font-black text-amber-600 font-game tracking-wider">
+          準備開始
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 雙人手寫算草區 (Level 2 & 3 開啟) -->
+  <section id="scratch-wrapper" class="max-w-4xl mx-auto w-full mb-2 hidden transition-all relative z-10">
+    <div class="flex items-center justify-between px-2 mb-1">
+      <span class="text-xs font-bold text-slate-800 bg-white/80 px-2 py-0.5 rounded shadow-sm">📝 直式手寫算草區（手指/觸控筆塗寫）</span>
+      <button onclick="toggleScratchpads()" class="text-xs text-amber-900 bg-amber-200/90 font-bold px-2 py-0.5 rounded hover:bg-amber-300">收合/展開</button>
+    </div>
+    <div class="grid grid-cols-2 gap-2 sm:gap-4">
+      <!-- 紅隊算草 -->
+      <div class="bg-red-50/95 backdrop-blur-md rounded-xl p-2 border-2 border-red-300 flex flex-col shadow">
+        <div class="flex justify-between items-center mb-1">
+          <span class="text-xs font-black text-red-600">🔴 紅隊算草板</span>
+          <button onclick="clearScratch('red')" class="text-[10px] bg-red-500 hover:bg-red-600 text-white font-bold px-2 py-0.5 rounded shadow">清除</button>
+        </div>
+        <div class="relative bg-white rounded-lg overflow-hidden border border-red-200 shadow-inner h-28 sm:h-36">
+          <canvas id="canvas-red" class="scratch-canvas w-full h-full"></canvas>
+        </div>
+      </div>
+
+      <!-- 藍隊算草 -->
+      <div class="bg-blue-50/95 backdrop-blur-md rounded-xl p-2 border-2 border-blue-300 flex flex-col shadow">
+        <div class="flex justify-between items-center mb-1">
+          <span class="text-xs font-black text-blue-600">🔵 藍隊算草板</span>
+          <button onclick="clearScratch('blue')" class="text-[10px] bg-blue-500 hover:bg-blue-600 text-white font-bold px-2 py-0.5 rounded shadow">清除</button>
+        </div>
+        <div class="relative bg-white rounded-lg overflow-hidden border border-blue-200 shadow-inner h-28 sm:h-36">
+          <canvas id="canvas-blue" class="scratch-canvas w-full h-full"></canvas>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 雙方獨立輸入鍵盤區 -->
+  <footer class="max-w-4xl mx-auto w-full relative z-10">
+    <div class="grid grid-cols-2 gap-3 sm:gap-6">
+      <!-- 紅隊鍵盤區 -->
+      <div class="bg-white/95 backdrop-blur-md border-2 border-red-300 rounded-2xl p-2 sm:p-3 flex flex-col items-center shadow-lg">
+        <div class="flex items-center gap-1 mb-1">
+          <span class="w-3 h-3 rounded-full bg-red-500 animate-pulse"></span>
+          <span class="text-xs font-black text-red-600">紅隊輸入</span>
+        </div>
+        <input id="red-input" type="text" readonly placeholder="?" class="w-full text-center text-xl sm:text-2xl font-black bg-red-50 border-2 border-red-400 text-red-700 rounded-xl py-1 px-2 mb-2 tracking-widest font-game shadow-inner" />
+        <div id="red-keypad" class="grid grid-cols-3 gap-1.5 w-full max-w-[200px]"></div>
+      </div>
+
+      <!-- 藍隊鍵盤區 -->
+      <div class="bg-white/95 backdrop-blur-md border-2 border-blue-300 rounded-2xl p-2 sm:p-3 flex flex-col items-center shadow-lg">
+        <div class="flex items-center gap-1 mb-1">
+          <span class="w-3 h-3 rounded-full bg-blue-500 animate-pulse"></span>
+          <span class="text-xs font-black text-blue-600">藍隊輸入</span>
+        </div>
+        <input id="blue-input" type="text" readonly placeholder="?" class="w-full text-center text-xl sm:text-2xl font-black bg-blue-50 border-2 border-blue-400 text-blue-700 rounded-xl py-1 px-2 mb-2 tracking-widest font-game shadow-inner" />
+        <div id="blue-keypad" class="grid grid-cols-3 gap-1.5 w-full max-w-[200px]"></div>
+      </div>
+    </div>
+
+    <!-- 開始對戰浮動按鈕 -->
+    <div class="flex justify-center mt-3 mb-1">
+      <button id="start-btn" onclick="startGame()" class="px-8 py-3 bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-300 hover:to-yellow-400 text-slate-900 font-black text-lg sm:text-xl rounded-full shadow-xl transform active:scale-95 transition-all animate-bounce border-2 border-white">
+        🏁 開始拔河比賽！
+      </button>
+    </div>
+  </footer>
+
+  <!-- 結算彈跳視窗 -->
+  <div id="win-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+    <div class="bg-slate-800 border-2 border-amber-400 rounded-3xl p-6 sm:p-8 max-w-sm w-full text-center shadow-2xl">
+      <div class="text-6xl mb-3" id="win-trophy">🏆</div>
+      <h2 id="win-title" class="text-2xl sm:text-3xl font-black text-amber-300 font-game mb-2">紅隊獲得勝利！</h2>
+      <p id="win-detail" class="text-sm text-slate-300 mb-6">拔河成功拉過判定點，反應神速！</p>
+      
+      <div class="bg-slate-900/80 rounded-xl p-3 mb-6 border border-slate-700 flex justify-around">
+        <div>
+          <div class="text-xs text-red-400 font-bold">紅隊總分</div>
+          <div id="final-red" class="text-2xl font-black text-red-400 font-game">0</div>
+        </div>
+        <div class="w-px bg-slate-700"></div>
+        <div>
+          <div class="text-xs text-blue-400 font-bold">藍隊總分</div>
+          <div id="final-blue" class="text-2xl font-black text-blue-400 font-game">0</div>
+        </div>
+      </div>
+
+      <button onclick="resetGame()" class="w-full py-3 rounded-full font-black text-slate-900 bg-amber-400 hover:bg-amber-300 text-base shadow-lg transition-transform active:scale-95">
+        🔄 再來一局對決
+      </button>
+    </div>
+  </div>
+
+  <script>
+    /* ========== 音效合成器 (Web Audio API) ========== */
+    const Sound = {
+      ctx: null,
+      init() {
+        if (!this.ctx) {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          this.ctx = new AudioContext();
+        }
+        if (this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+      },
+      playCorrect() {
+        try {
+          this.init();
+          const t = this.ctx.currentTime;
+          const osc1 = this.ctx.createOscillator();
+          const osc2 = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+
+          osc1.type = 'triangle';
+          osc2.type = 'sine';
+
+          osc1.frequency.setValueAtTime(523.25, t); // C5
+          osc1.frequency.exponentialRampToValueAtTime(783.99, t + 0.12); // G5
+          osc2.frequency.setValueAtTime(659.25, t); // E5
+          osc2.frequency.exponentialRampToValueAtTime(1046.50, t + 0.15); // C6
+
+          gain.gain.setValueAtTime(0.2, t);
+          gain.gain.exponentialRampToValueAtTime(0.01, t + 0.25);
+
+          osc1.connect(gain);
+          osc2.connect(gain);
+          gain.connect(this.ctx.destination);
+
+          osc1.start(t);
+          osc2.start(t);
+          osc1.stop(t + 0.25);
+          osc2.stop(t + 0.25);
+        } catch(e) {}
+      },
+      playWrong() {
+        try {
+          this.init();
+          const t = this.ctx.currentTime;
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(160, t);
+          osc.frequency.linearRampToValueAtTime(110, t + 0.18);
+
+          gain.gain.setValueAtTime(0.25, t);
+          gain.gain.exponentialRampToValueAtTime(0.01, t + 0.2);
+
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+
+          osc.start(t);
+          osc.stop(t + 0.2);
+        } catch(e) {}
+      },
+      playTug() {
+        try {
+          this.init();
+          const t = this.ctx.currentTime;
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'square';
+          osc.frequency.setValueAtTime(280, t);
+          osc.frequency.exponentialRampToValueAtTime(420, t + 0.08);
+
+          gain.gain.setValueAtTime(0.12, t);
+          gain.gain.exponentialRampToValueAtTime(0.01, t + 0.1);
+
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(t);
+          osc.stop(t + 0.1);
+        } catch(e) {}
+      },
+      playVictory() {
+        try {
+          this.init();
+          const notes = [523.25, 659.25, 783.99, 1046.50];
+          notes.forEach((freq, idx) => {
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            const t = this.ctx.currentTime + (idx * 0.1);
+            osc.frequency.value = freq;
+            osc.type = 'triangle';
+            gain.gain.setValueAtTime(0.25, t);
+            gain.gain.exponentialRampToValueAtTime(0.01, t + 0.3);
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+            osc.start(t);
+            osc.stop(t + 0.3);
+          });
+        } catch(e) {}
+      }
+    };
+
+    // 遊戲核心狀態
+    const MAX_STEPS = 6; // 拔河刻度（-6 紅勝, +6 藍勝）
+    const LEVEL_CONFIG = {
+      1: { time: 180, maxLen: 2, label: '九九乘法' },
+      2: { time: 240, maxLen: 3, label: '兩位數×一位數' },
+      3: { time: 300, maxLen: 4, label: '三位數×一位數' }
+    };
+
+    let currentLevel = 1;
+    let tugPos = 0; // -6 到 +6
+    let redScore = 0;
+    let blueScore = 0;
+    let timer = LEVEL_CONFIG[1].time;
+    let timerId = null;
+    let isPlaying = false;
+    let currentAnswer = null;
+    let questionPool = [];
+
+    // 產生題目池
+    function generateQuestionPool() {
+      const list = [];
+      if (currentLevel === 1) {
+        // 九九乘法 2~9 × 2~9
+        for (let a = 2; a <= 9; a++) {
+          for (let b = 2; b <= 9; b++) {
+            list.push([a, b]);
+          }
+        }
+      } else if (currentLevel === 2) {
+        // 兩位數 × 一位數 (11~99 × 2~9)
+        for (let a = 11; a <= 99; a++) {
+          for (let b = 2; b <= 9; b++) {
+            list.push([a, b]);
+          }
+        }
+      } else {
+        // 三位數 × 一位數 (101~999 × 2~9)
+        for (let a = 100; a <= 999; a += 3) {
+          for (let b = 2; b <= 9; b++) {
+            list.push([a, b]);
+          }
+        }
+      }
+      // 洗牌
+      questionPool = list.sort(() => Math.random() - 0.5);
+    }
+
+    function nextQuestion() {
+      if (questionPool.length === 0) {
+        generateQuestionPool();
+      }
+      const [num1, num2] = questionPool.pop();
+      currentAnswer = num1 * num2;
+      document.getElementById('question-text').textContent = `${num1} × ${num2}`;
+      // 清空雙方目前輸入框
+      document.getElementById('red-input').value = '';
+      document.getElementById('blue-input').value = '';
+    }
+
+    // 建立數字鍵盤
+    function renderKeypads() {
+      const teams = [
+        { name: 'red', bg: 'bg-red-500 hover:bg-red-400 text-white', fnBg: 'bg-red-700 hover:bg-red-600 text-white' },
+        { name: 'blue', bg: 'bg-blue-500 hover:bg-blue-400 text-white', fnBg: 'bg-blue-700 hover:bg-blue-600 text-white' }
+      ];
+
+      teams.forEach(({ name, bg, fnBg }) => {
+        const container = document.getElementById(`${name}-keypad`);
+        container.innerHTML = '';
+
+        // 1-9
+        for (let i = 1; i <= 9; i++) {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = `key-btn ${bg} font-black text-lg sm:text-xl py-2 rounded-xl font-game`;
+          btn.textContent = i;
+          btn.onclick = () => handleDigit(name, i);
+          container.appendChild(btn);
         }
 
-        // 瀏覽器原生全螢幕適配
-        function toggleFullscreen() {
-            if (!document.fullscreenElement) {
-                document.documentElement.requestFullscreen().catch((err) => {
-                    showToast('您的瀏覽器暫不支援自動全螢幕，可手動按 F11！', 'warning');
-                });
-            } else {
-                if (document.exitFullscreen) {
-                    document.exitFullscreen();
-                }
-            }
+        // 退格 ⌫
+        const delBtn = document.createElement('button');
+        delBtn.type = 'button';
+        delBtn.className = `key-btn ${fnBg} font-bold text-base py-2 rounded-xl`;
+        delBtn.textContent = '⌫';
+        delBtn.onclick = () => handleDelete(name);
+        container.appendChild(delBtn);
+
+        // 0
+        const zeroBtn = document.createElement('button');
+        zeroBtn.type = 'button';
+        zeroBtn.className = `key-btn ${bg} font-black text-lg sm:text-xl py-2 rounded-xl font-game`;
+        zeroBtn.textContent = '0';
+        zeroBtn.onclick = () => handleDigit(name, 0);
+        container.appendChild(zeroBtn);
+
+        // 送出 ✓
+        const enterBtn = document.createElement('button');
+        enterBtn.type = 'button';
+        enterBtn.id = `${name}-enter-btn`;
+        enterBtn.className = `key-btn bg-emerald-500 hover:bg-emerald-400 text-white font-black text-lg py-2 rounded-xl`;
+        enterBtn.textContent = 'OK';
+        enterBtn.onclick = () => handleSubmit(name);
+        container.appendChild(enterBtn);
+      });
+    }
+
+    // 處理輸入數字
+    function handleDigit(team, digit) {
+      if (!isPlaying) return;
+      const input = document.getElementById(`${team}-input`);
+      const maxLen = LEVEL_CONFIG[currentLevel].maxLen;
+      // 關鍵修復：依難度設定允許的位數（最高 4 位），避免原代碼長度小於 2 的限制 Bug
+      if (input.value.length < maxLen) {
+        input.value += String(digit);
+      }
+    }
+
+    // 處理刪除
+    function handleDelete(team) {
+      if (!isPlaying) return;
+      const input = document.getElementById(`${team}-input`);
+      input.value = input.value.slice(0, -1);
+    }
+
+    // 提交答案判定
+    function handleSubmit(team) {
+      if (!isPlaying) return;
+      const input = document.getElementById(`${team}-input`);
+      const userVal = parseInt(input.value, 10);
+      const stage = document.getElementById('tug-stage');
+
+      if (isNaN(userVal)) return;
+
+      if (userVal === currentAnswer) {
+        // 答對！
+        Sound.playCorrect();
+        Sound.playTug();
+
+        if (team === 'red') {
+          redScore++;
+          tugPos = Math.max(tugPos - 1, -MAX_STEPS);
+          stage.classList.remove('pull-red', 'pull-blue');
+          void stage.offsetWidth;
+          stage.classList.add('pull-red');
+        } else {
+          blueScore++;
+          tugPos = Math.min(tugPos + 1, MAX_STEPS);
+          stage.classList.remove('pull-red', 'pull-blue');
+          void stage.offsetWidth;
+          stage.classList.add('pull-blue');
         }
 
-        // 課堂小遊戲獨立滿屏 (白板沉浸競技場)
-        function toggleGameFullscreenArena() {
-            const gameBox = document.getElementById('gameBox');
-            const isArena = gameBox.classList.toggle('fullscreen-arena');
-            const btn = document.getElementById('btnArenaFullscreen');
-            if (isArena) {
-                btn.innerHTML = '<i class="fa-solid fa-compress"></i> 退出滿屏';
-                btn.classList.add('bg-purple-600', 'text-white');
-                showToast('遊戲已進入【白板獨立滿屏】，學生可上前點擊！', 'success');
-            } else {
-                btn.innerHTML = '<i class="fa-solid fa-tv"></i> 白板獨立滿屏';
-                btn.classList.remove('bg-purple-600', 'text-white');
-            }
-            triggerMathRender();
+        // 自動清除該隊算草板，提供下一題書寫空間
+        clearScratch(team);
+        updateArenaUI();
+
+        // 判定是否達陣拔過勝利線
+        if (Math.abs(tugPos) >= MAX_STEPS) {
+          finishGame('tugout');
+          return;
         }
 
-        // 香港小學各年級常用課題推薦庫
-        const CURRICULUM_TOPICS = {
-            "小一 (Primary 1)": ["20以內的加法和減法", "認識圖形（正方形、長方形、圓形、三角形）", "基本長度與量度", "香港通用貨幣（硬幣認識與找續）"],
-            "小二 (Primary 2)": ["乘法（二、五、十的乘法表）", "角和直角的認識", "三位數的加法與減法", "時鐘與時間（時、分）"],
-            "小三 (Primary 3)": ["同分母分數加法", "兩位數乘除法", "周界的認識與計算", "容量和公升、毫升"],
-            "小四 (Primary 4)": ["異分母分數加法", "平行四邊形和梯形", "小數的認識與加減法", "面積的計算（正方形與長方形）"],
-            "小五 (Primary 5)": ["分數乘法及應用題", "立方體與長方體的體積", "代數符號的初步認識", "簡易方程（一）"],
-            "小六 (Primary 6)": ["百分數的應用（折扣與盈虧）", "圓周與圓面積", "速率與行程問題", "折線圖與複合條形圖"]
-        };
+        // 進入下一題
+        nextQuestion();
+      } else {
+        // 答錯！
+        Sound.playWrong();
+        input.classList.remove('shake-anim');
+        void input.offsetWidth;
+        input.classList.add('shake-anim');
+        input.value = '';
+      }
+    }
 
-        // 離線香港小學全套教材庫範例數據 (專屬教研知識庫)
-        const OFFLINE_KNOWLEDGE_BASE = {
-            "同分母分數加法": {
-                grade: "小三 (Primary 3)",
-                part1: `### 1. 教材核心概念與前後知識銜接
-- **先備知識**：學生已具備「幾分之幾」的真分數概念，能透過披薩或長條圖理解分數代表「整體的若干等份」，且已知分子代表所取的等份數，分母代表整體被等分成多少份。
-- **本課核心**：同分母分數相加時，因為「等分的基準單位相同」，計算時**分母保持不變，只將分子相加**：$\\frac{a}{c} + \\frac{b}{c} = \\frac{a+b}{c}$。若結果分子等於分母，需轉換為整數 $1$。
-- **後續銜接**：小三下學期「同分母分數減法」，小四階段「通分」與「異分母分數加減法」。
+    // 更新拔河舞台與比分
+    function updateArenaUI() {
+      // 算出左邊百分比：-6 是 10%，0 是 50%，+6 是 90%
+      const percentage = 50 + (tugPos / MAX_STEPS) * 38;
+      const marker = document.getElementById('rope-marker');
+      marker.style.left = `${percentage}%`;
 
-### 2. 具體三維教學目標
-- **認知目標**：理解同分母分數相加時「分母不變、分子相加」的幾何意義與算理。
-- **技能目標**：能正確計算同分母真分數的加法算式，並能運用垂直分數符號完整書寫解答過程。
-- **思維與態度目標**：透過幾何長條圖與實物分割，培養由具體實物過渡至抽象算式的數感，建立互助學習態度。
+      document.getElementById('red-score').textContent = redScore;
+      document.getElementById('blue-score').textContent = blueScore;
+      document.getElementById('timer-display').textContent = timer;
+    }
 
-### 3. 常見學生學習難點與迷思概念 (Misconceptions)
-- **迷思一：分子、分母同時相加**
-  - *典型錯誤*：$\\frac{2}{7} + \\frac{3}{7} = \\frac{5}{14}$。學生誤將「分子加分子、分母加分母」。
-  - *導正對策*：運用「披薩切片模型」——每塊披薩都是 $\\frac{1}{7}$ 個，2 塊加 3 塊是 5 塊，每塊大小依然是「七分之一個」，絕不會切成 14 塊。
-- **迷思二：未理解結果為整數**
-  - *典型錯誤*：計算 $\\frac{3}{3}$ 時不知道等於整數 $1$。
-- **迷思三：混淆應用題中的單位**
-  - *典型錯誤*：分不清「$\\frac{1}{4}$ 個蛋糕」與「$\\frac{1}{4}$ 盒蛋糕」的基數概念。
+    // 切換難度
+    function changeLevel(lvl) {
+      if (isPlaying) return;
+      currentLevel = lvl;
 
-### 4. 關鍵提問設計與鷹架支援策略 (Scaffolding)
-- 「這兩個分數的分母都是 7，代表每一份的大小有沒有改變？」
-- 「如果把一個朱古力分成 8 塊，小明拿了 $\\frac{2}{8}$，小美拿了 $\\frac{3}{8}$，全部合起來是幾多個朱古力？為甚麼分母仍然是 8？」`,
-                lessonPlan: `### 【40分鐘課堂教學計劃】課題：同分母分數加法 (小學三年級)
-**教學資源**：互動電子白板、磁性分數披薩模型、雙色分數紙條、個人小白板。
+      // 樣式更新
+      [1, 2, 3].forEach(n => {
+        const btn = document.getElementById(`lvl-${n}`);
+        if (n === lvl) {
+          btn.className = 'level-tab flex-1 sm:flex-initial text-xs sm:text-sm font-bold px-3 sm:px-5 py-1.5 rounded-full border-2 border-amber-500 bg-amber-400 text-amber-950 shadow-md';
+        } else {
+          btn.className = 'level-tab flex-1 sm:flex-initial text-xs sm:text-sm font-bold px-3 sm:px-5 py-1.5 rounded-full border-2 border-white/80 bg-white/80 text-slate-700 hover:bg-white shadow';
+        }
+      });
 
----
-#### 一、引起動機 (約 5 分鐘)
-1. **生活情境引入**：沈老師帶來一個草莓大薄餅，平均切成了 8 等份。小健吃了 $\\frac{2}{8}$ 個，芷晴吃了 $\\frac{3}{8}$ 個。
-2. **提出問題**：兩人一共吃了幾分之幾？剩下幾分之幾？
-3. **學生預估**：邀請兩名學生在黑板上拼貼薄餅模型，引發對「分母到底會不會變成 16？」的熱烈討論。
+      // Level 2 與 3 自動顯示算草區
+      const scratch = document.getElementById('scratch-wrapper');
+      if (lvl >= 2) {
+        scratch.classList.remove('hidden');
+        resizeCanvases();
+      } else {
+        scratch.classList.add('hidden');
+      }
 
----
-#### 二、發展階段 (約 25 分鐘)
-**活動一：動手折紙條與拼貼實物（由具體到半具體）** (10分鐘)
-- 讓每位學生拿出長方形分數紙條，折出 6 等份。
-- 用粉紅色筆塗出 $\\frac{1}{6}$，再用藍色筆塗出 $\\frac{3}{6}$。
-- 觀察總共塗了幾格？引導學生齊讀：「1 個六分之一加上 3 個六分之一，等於 4 個六分之一，即 $\\frac{4}{6}$。」
+      timer = LEVEL_CONFIG[lvl].time;
+      document.getElementById('timer-display').textContent = timer;
+    }
 
-**活動二：算理推導與抽象化符號建構** (8分鐘)
-- 教師引導板書算式：$\\frac{1}{6} + \\frac{3}{6} = \\frac{1 + 3}{6} = \\frac{4}{6}$。
-- 學生觀察算式結構，歸納口訣：**「同分母，真省心；分母不變，分子加！」**
+    function toggleScratchpads() {
+      const scratch = document.getElementById('scratch-wrapper');
+      scratch.classList.toggle('hidden');
+      if (!scratch.classList.contains('hidden')) {
+        resizeCanvases();
+      }
+    }
 
-**活動三：同儕合作與糾錯小診所** (7分鐘)
-- 螢幕出示病人病歷卡：$\\frac{2}{5} + \\frac{1}{5} = \\frac{3}{10}$。
-- 兩人一組互相擔任「數學小醫生」，向全班說明「病因」所在並開出正確處方。
+    // 開始遊戲
+    function startGame() {
+      if (isPlaying) return;
+      Sound.init();
+      isPlaying = true;
+      tugPos = 0;
+      redScore = 0;
+      blueScore = 0;
+      timer = LEVEL_CONFIG[currentLevel].time;
 
----
-#### 三、鞏固與總結 (約 10 分鐘)
-1. **課堂即時反饋**：出示 3 道快速心算題（如 $\\frac{3}{9} + \\frac{4}{9} = ?$、$\\frac{4}{7} + \\frac{3}{7} = 1$），學生於個人小白板亮牌。
-2. **總結昇華**：引導學生重溫分數加法的核心本質——單位相同方可直接相加。
+      // 重設倒數外框與警示樣式
+      const vignette = document.getElementById('urgent-vignette');
+      vignette.classList.remove('urgent-flash');
+      const timerBadge = document.getElementById('timer-badge');
+      timerBadge.className = 'bg-white/95 backdrop-blur-md border-2 border-amber-300 rounded-full px-4 py-1 flex items-center gap-2 shadow-md transition-all';
+      document.getElementById('timer-display').className = 'font-game font-black text-2xl sm:text-3xl text-amber-600 tracking-wider';
 
----
-#### 四、板書設計要點
-\`\`\`
-┌────────────────────────────────────────────────────────┐
-│ 課題：同分母分數加法                                    │
-│ 【薄餅模型】                                 【計算口訣】│
-│ [圖示：2/8 + 3/8]                         分母保持不變  │
-│                                           分子直接相加  │
-│ 【規範算式】                                            │
-│   $\\frac{2}{8} + \\frac{3}{8} = \\frac{2+3}{8} = \\frac{5}{8}$  │
-│                                           【小心陷阱】  │
-│   $\\frac{3}{7} + \\frac{4}{7} = \\frac{7}{7} = 1$                │
-│                                           分母切勿相加！│
-└────────────────────────────────────────────────────────┘
-\`\`\``,
-                worksheet: `### 【沈老師數學三層分層工作紙】同分母分數加法
-**班別：小三 _____ 班 姓名：_____________ 學號：_____ 日期：_________**
+      document.getElementById('start-btn').classList.add('hidden');
+      document.getElementById('win-modal').classList.add('hidden');
 
----
-#### 【初階：基礎鞏固題】（動動腦，看圖填算式）
-1. 計算下列各題：
-   - (a) $\\frac{1}{5} + \\frac{2}{5} = \\frac{\\Box + \\Box}{5} = \\frac{\\Box}{\\Box}$
-   - (b) $\\frac{3}{9} + \\frac{4}{9} = \\frac{\\Box}{\\Box}$
-   - (c) $\\frac{2}{11} + \\frac{5}{11} = \\frac{\\Box}{\\Box}$
-2. 看圖寫算式並計算：一個巧克力條切成 7 份，塗陰影 2 份，再塗 4 份，共是幾分之幾？
-   - 算式：$\\frac{2}{7} + \\frac{4}{7} = \\underline{\\quad\\quad}$
+      generateQuestionPool();
+      updateArenaUI();
+      nextQuestion();
+      resizeCanvases();
 
----
-#### 【中階：生活應用題】（將步驟及單位寫清楚）
-3. 媽媽買了一個西瓜，哥哥吃了 $\\frac{2}{9}$ 個，妹妹吃了 $\\frac{4}{9}$ 個。
-   - (a) 兩人一共吃了西瓜幾分之幾？
-   - (b) 若爸爸再吃 $\\frac{3}{9}$ 個，三人共吃了幾分之幾？剛好等於幾個完整的西瓜？
+      clearInterval(timerId);
+      timerId = setInterval(() => {
+        timer--;
+        document.getElementById('timer-display').textContent = timer;
 
-4. 香港電車上，有 $\\frac{3}{10}$ 的乘客坐在上層，有 $\\frac{5}{10}$ 的乘客坐在下層。
-   - 上層和下層的乘客共佔全車載客量的幾分之幾？
-
----
-#### 【高階：思維挑戰與自擬題】
-5. **逆向探究思考題**：
-   - 若 $\\frac{\\Box}{12} + \\frac{5}{12} = \\frac{11}{12}$，方框內應填入的數字是多少？
-   - 如果 $\\frac{A}{8} + \\frac{B}{8} = 1$，且 $A$ 和 $B$ 都是不為 0 的不同單數，請寫出一組可能的 $A$ 和 $B$。
-6. **我是小小出題官**：請你運用「$\\frac{2}{7} + \\frac{3}{7}$」自編一道以「香港海洋公園」或「美味點心」為背景的應用題！
-
----
-#### 參考答案與評分指引 (Marking Scheme)
-- 1. (a) $\\frac{3}{5}$； (b) $\\frac{7}{9}$； (c) $\\frac{7}{11}$
-- 2. $\\frac{2}{7} + \\frac{4}{7} = \\frac{6}{7}$ (算式 1 分，答案 1 分)
-- 3. (a) $\\frac{2}{9} + \\frac{4}{9} = \\frac{6}{9}$ 個； (b) $\\frac{6}{9} + \\frac{3}{9} = \\frac{9}{9} = 1$ 個完整西瓜 (需寫出約為 1)
-- 4. $\\frac{3}{10} + \\frac{5}{10} = \\frac{8}{10}$ (分母相加寫成 20 者扣 2 分)
-- 5. 方框為 6；可能的數對：$A=1, B=7$ 或 $A=3, B=5$。`,
-                extension: `### 【課後延伸學習任務與精華溫習筆記】
----
-#### 1. 「生活數學偵探」自主探究任務 🔍
-- **任務名稱**：尋找家中的「同分母家族」！
-- **探究指引**：回家找出一盒雞蛋（例如12隻裝）或一排朱古力，與家人分享。記錄今天早上吃了幾分之幾，下午吃了幾分之幾，並列出同分母分數加法算式記錄一整天共吃了幾分之幾。
-
----
-#### 2. 重點溫習精華卡 (Cheat Sheet) 📌
-- **計算秘笈**：
-  $$\\frac{a}{c} + \\frac{b}{c} = \\frac{a + b}{c}$$
-- **黃金口訣**：同分母相加，分母照抄寫，分子手牽手，相加向前走！
-- **分子等於分母別忘記**：$\\frac{5}{5} = 1$、$\\frac{8}{8} = 1$。
-
----
-#### 3. 「防雷專區」考試易錯陷阱 ⚠️
-- ❌ **地雷一**：$\\frac{1}{4} + \\frac{2}{4} = \\frac{3}{8}$（大錯特錯！分母絕對不能相加！）
-- ❌ **地雷二**：忘記寫題目要求的單位（如「個」、「盒」、「升」）。
-
----
-#### 4. 親子互動 5 分鐘小挑戰 👨‍👩‍👧
-- 家長隨意說出一個真分數（例如 $\\frac{3}{10}$），小朋友要在 3 秒內回答「再加幾多才會變成 1？」（答：$\\frac{7}{10}$）。輪流挑戰 5 回合！`,
-                gameQuestions: [
-                    {
-                        question: "計算：$\\frac{2}{7} + \\frac{3}{7} = ?$",
-                        choices: ["$\\frac{5}{7}$", "$\\frac{5}{14}$", "$\\frac{6}{7}$", "$\\frac{1}{7}$"],
-                        correctIndex: 0,
-                        explanation: "同分母分數相加，分母保持不變（7），只需把分子相加：$2 + 3 = 5$，所以結果是 $\\frac{5}{7}$。"
-                    },
-                    {
-                        question: "小明吃了 $\\frac{1}{8}$ 個薄餅，小華吃了 $\\frac{3}{8}$ 個，兩人共吃了幾分之幾？",
-                        choices: ["$\\frac{4}{16}$", "$\\frac{4}{8}$", "$\\frac{1}{4}$", "$\\frac{3}{8}$"],
-                        correctIndex: 1,
-                        explanation: "兩人共吃 $\\frac{1}{8} + \\frac{3}{8} = \\frac{4}{8}$ 個薄餅。分母不能相加喔！"
-                    },
-                    {
-                        question: "計算：$\\frac{4}{9} + \\frac{5}{9} = ?$",
-                        choices: ["$\\frac{9}{18}$", "$\\frac{9}{9}$ 也就是 1", "$\\frac{20}{9}$", "$\\frac{1}{9}$"],
-                        correctIndex: 1,
-                        explanation: "分子相加 $4 + 5 = 9$，結果是 $\\frac{9}{9}$，當分子與分母相等時，數值等於整數 1。"
-                    },
-                    {
-                        question: "以下哪一個算式是正確的？",
-                        choices: [
-                            "$\\frac{1}{5} + \\frac{2}{5} = \\frac{3}{10}$",
-                            "$\\frac{2}{6} + \\frac{3}{6} = \\frac{5}{6}$",
-                            "$\\frac{3}{4} + \\frac{1}{4} = \\frac{4}{8}$",
-                            "$\\frac{1}{3} + \\frac{1}{3} = \\frac{1}{6}$"
-                        ],
-                        correctIndex: 1,
-                        explanation: "分數相加時「分母絕對不可相加」！只有第二個選項正確保留分母 6，分子 $2+3=5$。"
-                    },
-                    {
-                        question: "挑戰題：$\\frac{5}{12} + \\frac{?}{12} = \\frac{11}{12}$，問號處應填入什麼數字？",
-                        choices: ["6", "5", "7", "16"],
-                        correctIndex: 0,
-                        explanation: "逆向思考：$5 + ? = 11$，所以 $? = 11 - 5 = 6$。答案是 6。"
-                    }
-                ]
-            }
-        };
-
-        /**
-         * 萬能離線生成引擎：當用戶輸入任何課題且無 API Key 時，智能構造香港小學規範內容
-         */
-        function generateOfflineContent(grade, topic, sectionType) {
-            // 檢查是否命中精確課題庫
-            if (OFFLINE_KNOWLEDGE_BASE[topic]) {
-                const item = OFFLINE_KNOWLEDGE_BASE[topic];
-                if (sectionType === 'part1') return item.part1;
-                if (sectionType === 'lessonPlan') return item.lessonPlan;
-                if (sectionType === 'worksheet') return item.worksheet;
-                if (sectionType === 'extension') return item.extension;
-                if (sectionType === 'game') return item.gameQuestions;
-            }
-
-            // 動態智慧樣板引擎（為任意香港小學課題生成具備高度實用價值的教案與試題）
-            const isFraction = topic.includes('分') || topic.includes('小數');
-            const isGeometry = topic.includes('形') || topic.includes('體') || topic.includes('角') || topic.includes('周') || topic.includes('面');
-            const isMeasure = topic.includes('量') || topic.includes('米') || topic.includes('克') || topic.includes('時') || topic.includes('秒');
-            
-            let mathExample = isFraction ? "$\\frac{3}{8}$" : (isGeometry ? "$4 \\times 6 = 24\\text{ cm}^2$" : "計算：$125 \\times 8 = 1000$");
-
-            if (sectionType === 'part1') {
-                return `### 1. 教材核心概念與前後知識銜接
-- **年級與課題**：${grade} —— 【${topic}】
-- **先備知識**：學生已具備基礎數字與日常直觀感知經驗，能認讀基本數學符號與情境。
-- **本課核心本質**：建立「${topic}」的數學模型，掌握核心定義、性質或運算規則，強化數學符號與幾何/數量特徵的抽象對應。
-- **後續學習銜接**：為下階段的高階運算、生活應用題及中學代數思維打好穩固基礎。
-
-### 2. 具體三維教學目標
-- **認知目標**：理解【${topic}】的基本原理、概念定義與運算規範。
-- **技能目標**：能靈活運用課堂所學工具或算式，正確計算或解決相關數學問題。
-- **思維態度目標**：培養邏輯推理、觀察歸納與小組互助討論的良好數學素養。
-
-### 3. 常見學生學習難點與迷思概念 (Misconceptions)
-- **難點一：概念混淆**（容易與上一單元的舊概念產生負遷移或步驟混淆）。
-- **難點二：忽略單位與審題漏洞**（在文字題中容易遺漏計算單位或未看清題目要求）。
-- **難點三：由直觀圖形過渡至抽象算理時缺乏支撐**（需要具體教具或圖解作為鷹架）。
-
-### 4. 關鍵提問與鷹架支援設計
-- 「請觀察這組題目，你有發現什麼相同的特點？」
-- 「如果遇到生活中的實際情境，我們該先看哪一個關鍵字？」`;
-            }
-
-            if (sectionType === 'lessonPlan') {
-                return `### 【40分鐘課堂教學計劃】課題：${topic} (${grade})
-**教學工具**：電子白板投影、多媒體實物投影儀、課堂分組小白板、相關實物模型。
-
----
-#### 一、引起動機 (約 5 分鐘)
-1. **生活情境切入**：創設與香港生活貼近的情景（例如搭乘港鐵、茶餐廳點餐或文具店購物），提出與【${topic}】相關的啟發性問題。
-2. **啟發思考**：邀請學生發表猜測，引導全班聚焦本課探討焦點。
-
----
-#### 二、發展階段 (約 25 分鐘)
-**活動一：實物操作與直觀探究 (10分鐘)**
-- 學生分組運用實物教具或圖形卡片進行動手操作，透過觀察、分類與拼貼，建立初步概念感知。
-- 小組代表向全班展示操作發現。
-
-**活動二：算理推導與概念抽象化 (8分鐘)**
-- 沈老師引導學生將動手操作的經驗轉換為數學算式或規範表達。
-- 明確解題步驟與書寫規範（如垂直分數必須寫為 $\\frac{a}{b}$，運算符號使用 $\\times$ 與 $\\div$）。
-
-**活動三：同儕合作診斷與小老師競賽 (7分鐘)**
-- 出示學生常犯錯的「典型病歷題」，學生分組討論並派代表扮演「小老師」上台改錯並說明理由。
-
----
-#### 三、鞏固與總結 (約 10 分鐘)
-1. **快問快答**：利用課堂互動題檢視學生掌握程度，即時統計正答率。
-2. **課堂小結**：總結本節課三大關鍵字，鞏固記憶要點。
-
----
-#### 四、板書設計要點
-\`\`\`
-┌────────────────────────────────────────────────────────┐
-│ 課題：${topic} (${grade})                             │
-│ 【核心概念/圖解】                           【規範算式】│
-│ 展示關鍵圖形或公式結構                      ${mathExample}      │
-│                                           【防雷提醒】  │
-│ 【解題三部曲】                                審清題意    │
-│ 1. 圈出關鍵字                              列式計算    │
-│ 2. 規範列式                                記得寫單位  │
-│ 3. 檢查答案                                            │
-└────────────────────────────────────────────────────────┘
-\`\`\``;
-            }
-
-            if (sectionType === 'worksheet') {
-                return `### 【沈老師數學分層工作紙】${topic} (${grade})
-**班別：${grade.substring(0, 2)} _____ 班 姓名：_____________ 學號：_____ 日期：_________**
-
----
-#### 【初階：基礎鞏固題】（鞏固基本概念與規範書寫）
-1. 計算或填空：請寫出【${topic}】的核心概念或完成以下算式。
-   - (a) ${mathExample}
-   - (b) 請完成基本練習，注意步驟完整。
-2. 基礎判斷題：判斷下列說法是否正確，並在括號內打鉤或叉。
-
----
-#### 【中階：生活情境應用題】（將步驟及單位寫清楚）
-3. 小明在超市購買文具，已知相關情境符合【${topic}】之應用：
-   - 請列出算式計算出最終答案，並註明完整中文答句與單位。
-4. 香港小巴上有乘客上下車，依據題意列出綜合算式並求出結果。
-
----
-#### 【高階：思維挑戰與自擬題】
-5. **逆向探究挑戰題**：若已知最終結果，你能倒推回最初的數值或條件嗎？請寫出你的思考歷程。
-6. **我是小小出題官**：請你運用今天所學的【${topic}】，結合生活中的一次真實經驗，自己編寫一道應用題並附上標準答案！
-
----
-#### 參考答案與評分準則 (Marking Scheme)
-- 第 1-2 題：基礎運算正確得 2 分，格式工整得 1 分。
-- 第 3-4 題：算式 2 分，答案計算正確 1 分，單位答句 1 分（欠單位扣 0.5 分）。
-- 第 5-6 題：具備完整逆向邏輯思維並能自洽出題者獲滿分 5 分。`;
-            }
-
-            if (sectionType === 'extension') {
-                return `### 【課後延伸學習任務與精華溫習筆記】${topic}
----
-#### 1. 「生活數學偵探」自主探究任務 🔍
-- **任務指引**：在你的家中、學校或社區中，尋找 1 個能用到【${topic}】的生活場景（例如包裝盒尺寸、超市特價標籤或計程車收費表），拍下照片或繪製簡圖，並寫下一道數學小問題。
-
----
-#### 2. 重點溫習精華卡 (Cheat Sheet) 📌
-- **核心公式/口訣**：掌握【${topic}】的本質，計算時保持清晰邏輯。
-- **解題三步曲**：一審題、二列式、三檢驗。
-
----
-#### 3. 「防雷專區」考試易錯陷阱 ⚠️
-- ❌ **陷阱一**：粗心算錯基本加減乘除口訣。
-- ❌ **陷阱二**：漏寫括號或混淆運算優先次序。
-- ❌ **陷阱三**：忽略最終答案的約簡或單位換算。
-
----
-#### 4. 親子互動 5 分鐘小挑戰 👨‍👩‍👧
-- 與家長共同進行「生活考考你」：家長出題、孩子挑戰，看誰能在 10 秒內快速說出正確答案與解題思路！`;
-            }
-
-            if (sectionType === 'game') {
-                return [
-                    {
-                        question: `關於【${topic}】，以下哪一項敘述是完全正確的？`,
-                        choices: ["計算時需注意單位與運算規則", "任何情況下都可以隨意相加", "算式不需要檢查", "符號不具備數學意義"],
-                        correctIndex: 0,
-                        explanation: `學習【${topic}】時，審清題意、注意符號與規範步驟是奪得滿分的關鍵！`
-                    },
-                    {
-                        question: `在【${topic}】的計算過程中，若遇到複合算式應如何處理？`,
-                        choices: ["按規則依序計算並注意運算優先權", "由右向左隨機計算", "只看最後一個數字", "忽略括號"],
-                        correctIndex: 0,
-                        explanation: `數學運算講求嚴謹邏輯，必須按香港小學數學規範順序仔細計算。`
-                    },
-                    {
-                        question: `小明在做【${topic}】的應用題時，忘記寫單位，會發生甚麼事？`,
-                        choices: ["會被扣減步驟分，必須養成標註單位好習慣", "完全不影響得分", "電腦會自動補上", "可以隨便寫一個單位"],
-                        correctIndex: 0,
-                        explanation: `小學數學評分準則中，應用題必須具備完整的算式、單位與答句！`
-                    },
-                    {
-                        question: `快問快答挑戰：以下哪一個是學習【${topic}】的最佳思維策略？`,
-                        choices: ["先畫圖或借助實物理解，再列式計算", "死記硬背不求甚解", "直接抄同學答案", "跳過檢查環節"],
-                        correctIndex: 0,
-                        explanation: `「動手學數學、數形結合」是沈老師最推薦的數學學習法！`
-                    },
-                    {
-                        question: `挑戰題：完成一道【${topic}】題目後，最後一步必須做甚麼？`,
-                        choices: ["回頭代入檢查答案是否合乎情理", "立刻闔上課本", "刪除草稿算式", "換另一支筆寫字"],
-                        correctIndex: 0,
-                        explanation: `檢查驗算是每位優秀數學小博士不可或缺的好習慣！`
-                    }
-                ];
-            }
+        // 最後 20 秒觸發全畫面外框呼吸閃動與警急倒數提示
+        if (timer <= 20 && timer > 0) {
+          vignette.classList.add('urgent-flash');
+          timerBadge.className = 'bg-red-100 border-2 border-red-500 rounded-full px-4 py-1 flex items-center gap-2 shadow-lg scale-105 transition-all';
+          document.getElementById('timer-display').className = 'font-game font-black text-2xl sm:text-3xl text-red-600 tracking-wider animate-pulse';
         }
 
-        // 當年級改變時，動態更新快捷按鈕
-        function onGradeChange() {
-            const grade = document.getElementById('gradeSelect').value;
-            renderQuickPicks(grade);
+        if (timer <= 0) {
+          clearInterval(timerId);
+          vignette.classList.remove('urgent-flash');
+          finishGame('timeout');
         }
+      }, 1000);
+    }
 
-        function renderQuickPicks(grade) {
-            const container = document.getElementById('quickPickContainer');
-            const topics = CURRICULUM_TOPICS[grade] || CURRICULUM_TOPICS["小三 (Primary 3)"];
-            container.innerHTML = '';
-            topics.forEach((t) => {
-                const btn = document.createElement('button');
-                btn.className = 'px-2.5 py-1 bg-white border border-pink-200 text-pink-700 hover:bg-pink-100 rounded-lg text-xs font-medium transition';
-                btn.innerText = t;
-                btn.onclick = () => quickPick(grade, t);
-                container.appendChild(btn);
-            });
+    // 結束遊戲判定
+    function finishGame(reason) {
+      isPlaying = false;
+      clearInterval(timerId);
+      Sound.playVictory();
+
+      // 關閉閃爍外框
+      document.getElementById('urgent-vignette').classList.remove('urgent-flash');
+
+      const modal = document.getElementById('win-modal');
+      const trophy = document.getElementById('win-trophy');
+      const title = document.getElementById('win-title');
+      const detail = document.getElementById('win-detail');
+
+      document.getElementById('final-red').textContent = redScore;
+      document.getElementById('final-blue').textContent = blueScore;
+
+      if (tugPos < 0) {
+        trophy.textContent = '🔴 🏆';
+        title.textContent = '紅隊榮獲冠軍！';
+        detail.textContent = reason === 'tugout' ? '繩索完全被紅隊拉過決勝線！' : '時間到！紅隊佔據拔河優勢勝出！';
+        title.className = 'text-2xl sm:text-3xl font-black text-red-500 font-game mb-2';
+      } else if (tugPos > 0) {
+        trophy.textContent = '🔵 🏆';
+        title.textContent = '藍隊榮獲冠軍！';
+        detail.textContent = reason === 'tugout' ? '繩索完全被藍隊拉過決勝線！' : '時間到！藍隊佔據拔河優勢勝出！';
+        title.className = 'text-2xl sm:text-3xl font-black text-blue-500 font-game mb-2';
+      } else {
+        trophy.textContent = '🤝 ⚖️';
+        title.textContent = '勢均力敵，平手！';
+        detail.textContent = '雙方實力不相上下，難分勝負！';
+        title.className = 'text-2xl sm:text-3xl font-black text-amber-500 font-game mb-2';
+      }
+
+      modal.classList.remove('hidden');
+    }
+
+    // 重置遊戲
+    function resetGame() {
+      document.getElementById('win-modal').classList.add('hidden');
+      document.getElementById('start-btn').classList.remove('hidden');
+      document.getElementById('urgent-vignette').classList.remove('urgent-flash');
+      
+      const timerBadge = document.getElementById('timer-badge');
+      timerBadge.className = 'bg-white/95 backdrop-blur-md border-2 border-amber-300 rounded-full px-4 py-1 flex items-center gap-2 shadow-md transition-all';
+      document.getElementById('timer-display').className = 'font-game font-black text-2xl sm:text-3xl text-amber-600 tracking-wider';
+
+      tugPos = 0;
+      redScore = 0;
+      blueScore = 0;
+      timer = LEVEL_CONFIG[currentLevel].time;
+      document.getElementById('question-text').textContent = '準備開始';
+      document.getElementById('red-input').value = '';
+      document.getElementById('blue-input').value = '';
+      clearScratch('red');
+      clearScratch('blue');
+      updateArenaUI();
+    }
+
+    // 雙手寫算草板（真實 Canvas 塗鴉，支援滑鼠與多點觸控）
+    const canvases = { red: null, blue: null };
+    const ctxs = { red: null, blue: null };
+    const isDrawing = { red: false, blue: false };
+
+    function initCanvases() {
+      ['red', 'blue'].forEach(team => {
+        const c = document.getElementById(`canvas-${team}`);
+        canvases[team] = c;
+        ctxs[team] = c.getContext('2d');
+
+        // 觸控事件
+        c.addEventListener('touchstart', (e) => {
+          e.preventDefault();
+          const touch = e.touches[0];
+          startDraw(team, touch.clientX, touch.clientY);
+        }, { passive: false });
+
+        c.addEventListener('touchmove', (e) => {
+          e.preventDefault();
+          const touch = e.touches[0];
+          moveDraw(team, touch.clientX, touch.clientY);
+        }, { passive: false });
+
+        window.addEventListener('touchend', () => stopDraw(team));
+
+        // 滑鼠事件
+        c.addEventListener('mousedown', (e) => startDraw(team, e.clientX, e.clientY));
+        c.addEventListener('mousemove', (e) => moveDraw(team, e.clientX, e.clientY));
+        window.addEventListener('mouseup', () => stopDraw(team));
+      });
+      resizeCanvases();
+    }
+
+    function resizeCanvases() {
+      ['red', 'blue'].forEach(team => {
+        const c = canvases[team];
+        if (!c) return;
+        const rect = c.getBoundingClientRect();
+        if (rect.width > 0 && rect.height > 0) {
+          // 保存現有繪製內容防止重繪時丟失
+          const temp = ctxs[team].getImageData(0, 0, c.width, c.height);
+          c.width = rect.width;
+          c.height = rect.height;
+          ctxs[team].lineWidth = 3;
+          ctxs[team].lineCap = 'round';
+          ctxs[team].lineJoin = 'round';
+          ctxs[team].strokeStyle = team === 'red' ? '#b91c1c' : '#1d4ed8';
+          drawGrid(team);
+          try {
+            ctxs[team].putImageData(temp, 0, 0);
+          } catch(e) {}
         }
-
-        const SYSTEM_INSTRUCTION = `你是一位香港小學數學科資深教研專家。請嚴格遵循香港小學數學課程指引。
-【數學符號規範】：
-1. 所有分數必須使用 LaTeX 垂直上下分數語法 $\\frac{a}{b}$，絕對不可使用斜線 "/"。
-2. 乘號使用 $\\times$，除號使用 $\\div$。`;
-
-        // Web Audio API 課堂即時音效合成器 (無須加載外部音頻檔，點擊即響)
-        const AudioKit = {
-            ctx: null,
-            init() {
-                if (!this.ctx) {
-                    const AudioCtx = window.AudioContext || window.webkitAudioContext;
-                    if (AudioCtx) this.ctx = new AudioCtx();
-                }
-            },
-            playTone(freq, type = 'sine', duration = 0.15) {
-                if (audioMuted) return;
-                try {
-                    this.init();
-                    if (!this.ctx) return;
-                    if (this.ctx.state === 'suspended') this.ctx.resume();
-                    const osc = this.ctx.createOscillator();
-                    const gain = this.ctx.createGain();
-                    osc.type = type;
-                    osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
-                    gain.gain.setValueAtTime(0.12, this.ctx.currentTime);
-                    gain.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + duration);
-                    osc.connect(gain);
-                    gain.connect(this.ctx.destination);
-                    osc.start();
-                    osc.stop(this.ctx.currentTime + duration);
-                } catch (e) {
-                    console.debug('Audio error', e);
-                }
-            },
-            correct() {
-                this.playTone(587.33, 'triangle', 0.12);
-                setTimeout(() => this.playTone(880, 'triangle', 0.25), 100);
-            },
-            wrong() {
-                this.playTone(220, 'sawtooth', 0.2);
-                setTimeout(() => this.playTone(180, 'sawtooth', 0.3), 150);
-            },
-            click() {
-                this.playTone(400, 'sine', 0.05);
-            }
-        };
-
-        function toggleAudioMute() {
-            audioMuted = !audioMuted;
-            const btn = document.getElementById('muteBtn');
-            if (audioMuted) {
-                btn.innerHTML = '<i class="fa-solid fa-volume-xmark"></i> 靜音中';
-                btn.classList.add('bg-slate-100', 'text-slate-400');
-            } else {
-                btn.innerHTML = '<i class="fa-solid fa-volume-high"></i> 音效開';
-                btn.classList.remove('bg-slate-100', 'text-slate-400');
-            }
-        }
-
-        /**
-         * 自訂 Toast 通知替代 alert()
-         */
-        function showToast(message, type = 'info') {
-            const container = document.getElementById('toastContainer');
-            const toast = document.createElement('div');
-            
-            let bgStyle = 'bg-slate-800 text-white';
-            let icon = 'fa-info-circle';
-            if (type === 'success') {
-                bgStyle = 'bg-emerald-600 text-white';
-                icon = 'fa-circle-check';
-            } else if (type === 'error') {
-                bgStyle = 'bg-rose-600 text-white';
-                icon = 'fa-circle-exclamation';
-            } else if (type === 'warning') {
-                bgStyle = 'bg-amber-600 text-white';
-                icon = 'fa-triangle-exclamation';
-            }
-
-            toast.className = `${bgStyle} px-4 py-2.5 rounded-xl text-xs font-bold shadow-lg flex items-center gap-2 transform transition-all duration-300 translate-y-4 opacity-0 pointer-events-auto max-w-xs`;
-            toast.innerHTML = `<i class="fa-solid ${icon}"></i> <span>${message}</span>`;
-            container.appendChild(toast);
-
-            requestAnimationFrame(() => {
-                toast.classList.remove('translate-y-4', 'opacity-0');
-            });
-
-            setTimeout(() => {
-                toast.classList.add('opacity-0', 'translate-y-4');
-                setTimeout(() => toast.remove(), 300);
-            }, 3200);
-        }
-
-        /**
-         * 剪貼簿複製功能 (iframe 容錯保護)
-         */
-        function copyElementText(elementId) {
-            const elem = document.getElementById(elementId);
-            if (!elem) return;
-            const text = elem.innerText;
-            
-            if (navigator.clipboard && navigator.clipboard.writeText) {
-                navigator.clipboard.writeText(text).then(() => {
-                    showToast('已複製內容至剪貼簿！', 'success');
-                }).catch(() => {
-                    fallbackCopy(text);
-                });
-            } else {
-                fallbackCopy(text);
-            }
-        }
-
-        function fallbackCopy(text) {
-            const textArea = document.createElement('textarea');
-            textArea.value = text;
-            textArea.style.position = 'fixed';
-            textArea.style.top = '-9999px';
-            document.body.appendChild(textArea);
-            textArea.select();
-            try {
-                document.execCommand('copy');
-                showToast('已複製內容至剪貼簿！', 'success');
-            } catch (err) {
-                showToast('複製失敗，請手動選取反藍複製', 'error');
-            }
-            document.body.removeChild(textArea);
-        }
-
-        /**
-         * 列印功能
-         */
-        function printFormattedDoc(id, title) {
-            const content = document.getElementById(id).innerHTML;
-            const printWin = window.open('', '_blank');
-            printWin.document.write(`
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <title>${title} - 沈老師教學小工具</title>
-                    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"><\/script>
-                    <style>
-                        body { font-family: 'Noto Sans TC', sans-serif; padding: 30px; line-height: 1.8; color: #1e293b; font-size: 14px; }
-                        h1, h2, h3 { color: #831843; }
-                        table { width: 100%; border-collapse: collapse; margin: 15px 0; }
-                        th, td { border: 1px solid #cbd5e1; padding: 8px 12px; }
-                        th { background: #f8fafc; }
-                    </style>
-                </head>
-                <body>
-                    <h2>${title}</h2>
-                    <p style="color:#64748b; font-size:12px;">香港小學數學課堂資源 · 生成日期：${new Date().toLocaleDateString()}</p>
-                    <hr style="border:0; border-top:1.5px solid #f472b6; margin: 15px 0;">
-                    <div>${content}</div>
-                </body>
-                </html>
-            `);
-            printWin.document.close();
-            setTimeout(() => {
-                if (printWin.MathJax && printWin.MathJax.typesetPromise) {
-                    printWin.MathJax.typesetPromise().then(() => printWin.print()).catch(() => printWin.print());
-                } else {
-                    printWin.print();
-                }
-            }, 800);
-        }
-
-        function getEffectiveKey() {
-            const hash = window.location.hash;
-            if (hash && hash.includes('key=')) {
-                const urlKey = hash.split('key=')[1]?.split('&')[0]?.trim();
-                if (urlKey) return decodeURIComponent(urlKey);
-            }
-            const stored = localStorage.getItem('user_gemini_key');
-            if (stored && stored.trim()) return stored.trim();
-            return apiKey;
-        }
-
-        function updateKeyStatusUI() {
-            const key = getEffectiveKey();
-            const badge = document.getElementById('engineModeBadge');
-            if (badge) {
-                if (key) {
-                    badge.innerHTML = '<i class="fa-solid fa-brain text-purple-500"></i> Gemini 雲端模型模式';
-                    badge.className = 'px-2 py-1 bg-purple-50 text-purple-700 rounded-xl shadow-xs flex items-center gap-1.5';
-                } else {
-                    badge.innerHTML = '<i class="fa-solid fa-bolt text-emerald-500"></i> 本地智能教研庫 (免 Key)';
-                    badge.className = 'px-2 py-1 bg-white text-emerald-700 rounded-xl shadow-xs flex items-center gap-1.5';
-                }
-            }
-        }
-
-        window.addEventListener('DOMContentLoaded', () => {
-            updateKeyStatusUI();
-            startPresetGame();
-        });
-
-        function toggleKeyModal() {
-            const modal = document.getElementById('keyModal');
-            modal.classList.toggle('hidden');
-            document.getElementById('customApiKeyInput').value = localStorage.getItem('user_gemini_key') || "";
-            document.getElementById('testResultMsg').classList.add('hidden');
-        }
-
-        function saveCustomKey() {
-            const val = document.getElementById('customApiKeyInput').value.trim();
-            if (val) {
-                localStorage.setItem('user_gemini_key', val);
-                showToast('API Key 儲存成功！', 'success');
-            } else {
-                localStorage.removeItem('user_gemini_key');
-                showToast('已清除自訂金鑰，改用預設環境連線', 'info');
-            }
-            updateKeyStatusUI();
-            toggleKeyModal();
-        }
-
-        async function testKeyConnection() {
-            const key = document.getElementById('customApiKeyInput').value.trim() || getEffectiveKey();
-            const msg = document.getElementById('testResultMsg');
-            const btn = document.getElementById('btnTestKey');
-
-            if (!key) {
-                msg.className = 'text-xs p-2.5 rounded-xl bg-rose-50 text-rose-700 block';
-                msg.innerText = '請先填入 API Key 再進行測試！';
-                return;
-            }
-
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> 測試中...';
-            msg.className = 'text-xs p-2.5 rounded-xl bg-slate-100 text-slate-700 block';
-            msg.innerText = '正在向 Gemini API 發送訊號測試...';
-
-            try {
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(key)}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ contents: [{ parts: [{ text: "ping" }] }] })
-                });
-
-                if (!response.ok) {
-                    const err = await response.json().catch(() => ({}));
-                    throw new Error(err.error?.message || `HTTP ${response.status}`);
-                }
-
-                msg.className = 'text-xs p-2.5 rounded-xl bg-emerald-50 text-emerald-700 block font-bold';
-                msg.innerHTML = '<i class="fa-solid fa-circle-check mr-1"></i> 連線成功！此 API 金鑰運作完全正常。';
-                showToast('API Key 測試成功！', 'success');
-            } catch (e) {
-                msg.className = 'text-xs p-2.5 rounded-xl bg-rose-50 text-rose-700 block font-medium';
-                msg.innerText = `連線失敗：${e.message}`;
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = '<i class="fa-solid fa-plug"></i> 測試連線';
-            }
-        }
-
-        async function callGeminiApi(promptText, isJson = false) {
-            const activeKey = getEffectiveKey();
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(activeKey)}`;
-
-            const payload = {
-                contents: [{ parts: [{ text: promptText }] }],
-                systemInstruction: { parts: [{ text: SYSTEM_INSTRUCTION }] }
-            };
-
-            if (isJson) {
-                payload.generationConfig = { responseMimeType: "application/json" };
-            }
-
-            // 指數退避重試邏輯 (Exponential Backoff)
-            const maxRetries = 3;
-            let delay = 1000;
-
-            for (let attempt = 0; attempt < maxRetries; attempt++) {
-                try {
-                    const response = await fetch(url, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
-                    });
-
-                    if (response.status === 429 && attempt < maxRetries - 1) {
-                        await new Promise(r => setTimeout(r, delay));
-                        delay *= 2;
-                        continue;
-                    }
-
-                    if (!response.ok) {
-                        const errData = await response.json().catch(() => ({}));
-                        throw new Error(errData.error?.message || `連線狀態異常 (HTTP ${response.status})`);
-                    }
-
-                    const data = await response.json();
-                    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-                    if (!text) throw new Error("API 回傳內容為空");
-                    return text;
-                } catch (err) {
-                    if (attempt === maxRetries - 1) throw err;
-                    await new Promise(r => setTimeout(r, delay));
-                    delay *= 2;
-                }
-            }
-        }
-
-        /**
-         * 安全且支援數學公式的 Markdown 解析器
-         * 避免將 LaTeX 語法中的底線誤轉為斜體，並支援表格、標題與條列
-         */
-        function formatMarkdownSafe(text) {
-            if (!text) return "";
-
-            // 1. 保留數學公式暫存
-            const mathSnippets = [];
-            let safeText = text.replace(/(\$\$[\s\S]*?\$\$|\$[^$]*?\$)/g, (match) => {
-                mathSnippets.push(match);
-                return `%%MATH_${mathSnippets.length - 1}%%`;
-            });
-
-            // 2. 自動將漏網之魚的斜線分數如 3/7 轉換為 \frac{3}{7}
-            safeText = safeText.replace(/(\d+)\s*\/\s*(\d+)/g, '$\\frac{$1}{$2}$');
-
-            // 3. 處理常規 Markdown 結構
-            // 標題
-            safeText = safeText.replace(/^### (.*$)/gim, '<h3 class="font-bold text-pink-900 text-sm mt-3 mb-1.5 flex items-center gap-1.5"><span class="w-1.5 h-3.5 bg-pink-500 rounded-full inline-block"></span>$1</h3>');
-            safeText = safeText.replace(/^## (.*$)/gim, '<h2 class="font-bold text-pink-950 text-base mt-4 mb-2 pb-1 border-b border-pink-100">$1</h2>');
-            safeText = safeText.replace(/^# (.*$)/gim, '<h1 class="font-bold text-pink-950 text-lg mt-4 mb-2">$1</h1>');
-            
-            // 粗體
-            safeText = safeText.replace(/\*\*(.*?)\*\*/g, '<strong class="text-pink-950 font-bold">$1</strong>');
-            
-            // 無序清單
-            safeText = safeText.replace(/^\s*[-*+]\s+(.*)$/gim, '<li class="text-slate-700 ml-4 list-disc">$1</li>');
-
-            // 換行
-            safeText = safeText.replace(/\n\n/g, '<div class="h-2"></div>');
-            safeText = safeText.replace(/\n/g, '<br>');
-
-            // 4. 還原數學公式
-            safeText = safeText.replace(/%%MATH_(\d+)%%/g, (match, idx) => mathSnippets[idx]);
-
-            return safeText;
-        }
-
-        function triggerMathRender() {
-            if (window.MathJax && window.MathJax.typesetPromise) {
-                window.MathJax.typesetPromise().catch(err => console.debug('MathJax Error:', err));
-            }
-        }
-
-        function unlockSection(sectionId) {
-            const sec = document.getElementById(sectionId);
-            if (sec) {
-                sec.classList.remove('opacity-50', 'pointer-events-none');
-                sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                showToast('已解鎖下一階段！', 'success');
-            }
-        }
-
-        function quickPick(grade, topic) {
-            document.getElementById('gradeSelect').value = grade;
-            document.getElementById('topicInput').value = topic;
-            AudioKit.click();
-            showToast(`已設定課題：${topic}`, 'info');
-        }
-
-        async function runPart1Analysis() {
-            const grade = document.getElementById('gradeSelect').value;
-            const topic = document.getElementById('topicInput').value.trim();
-            const btn = document.getElementById('btnPart1');
-
-            if (!topic) {
-                showToast('請輸入課題名稱！', 'warning');
-                return;
-            }
-
-            AudioKit.click();
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> 正在進行教材分析...';
-
-            const activeKey = getEffectiveKey();
-
-            try {
-                let res = "";
-                if (activeKey) {
-                    // 使用 AI 在線生成
-                    const prompt = `請為香港小學數學課題進行專業教材分析：
-【年級】：${grade}
-【課題】：${topic}
-依據香港課程指引，提供核心概念、三維目標、迷思概念及關鍵提問。垂直分數寫為 $\\frac{a}{b}$。`;
-                    res = await callGeminiApi(prompt);
-                } else {
-                    // 使用離線教研數據庫（零延遲、免金鑰）
-                    await new Promise(r => setTimeout(r, 250)); // 微幅過渡動畫
-                    res = generateOfflineContent(grade, topic, 'part1');
-                }
-
-                part1Data = res;
-                document.getElementById('part1Result').innerHTML = formatMarkdownSafe(res);
-                document.getElementById('part1Container').classList.remove('hidden');
-                triggerMathRender();
-                showToast('教材深度分析已生成！', 'success');
-            } catch (e) {
-                // 遇錯自動降級至離線庫
-                const fallbackRes = generateOfflineContent(grade, topic, 'part1');
-                part1Data = fallbackRes;
-                document.getElementById('part1Result').innerHTML = formatMarkdownSafe(fallbackRes);
-                document.getElementById('part1Container').classList.remove('hidden');
-                triggerMathRender();
-                showToast(`已為您自動載入香港小學標準教研分析！`, 'info');
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = '<i class="fa-solid fa-magnifying-glass"></i> 開始教材深度分析 (核心概念 · 目標 · 迷思)';
-            }
-        }
-
-        async function generateLessonPlan() {
-            const grade = document.getElementById('gradeSelect').value;
-            const topic = document.getElementById('topicInput').value.trim();
-            const btn = document.getElementById('btnPart2');
-
-            AudioKit.click();
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> 正在編寫40分鐘詳細教案...';
-
-            const activeKey = getEffectiveKey();
-
-            try {
-                let res = "";
-                if (activeKey) {
-                    const prompt = `基於教材研析：\n${part1Data || topic}\n
-請為香港小學【${grade}】數學課題【${topic}】設計一份標準 40 分鐘的【詳細課堂教學計劃】：
-包含教學資料、引起動機(5分)、發展階段(25分)、鞏固與總結(10分)、板書規劃。垂直分數寫為 $\\frac{a}{b}$。`;
-                    res = await callGeminiApi(prompt);
-                } else {
-                    await new Promise(r => setTimeout(r, 250));
-                    res = generateOfflineContent(grade, topic, 'lessonPlan');
-                }
-
-                lessonPlanData = res;
-                document.getElementById('part2Result').innerHTML = formatMarkdownSafe(res);
-                document.getElementById('part2Container').classList.remove('hidden');
-                triggerMathRender();
-                showToast('40分鐘教案已成功生成！', 'success');
-            } catch (e) {
-                const fallbackRes = generateOfflineContent(grade, topic, 'lessonPlan');
-                lessonPlanData = fallbackRes;
-                document.getElementById('part2Result').innerHTML = formatMarkdownSafe(fallbackRes);
-                document.getElementById('part2Container').classList.remove('hidden');
-                triggerMathRender();
-                showToast(`已載入香港標準教案設計！`, 'info');
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = '<i class="fa-solid fa-file-signature"></i> 生成 40 分鐘香港小學標準教案';
-            }
-        }
-
-        async function reviseLessonPlan() {
-            const reviseText = document.getElementById('part2ReviseInput').value.trim();
-            const btn = document.getElementById('btnRevisePlan');
-            if (!reviseText) {
-                showToast('請先填寫修訂建議！', 'warning');
-                return;
-            }
-
-            AudioKit.click();
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> 修訂中...';
-
-            const activeKey = getEffectiveKey();
-            try {
-                let res = "";
-                if (activeKey) {
-                    const prompt = `現有教案：\n${lessonPlanData}\n教師修訂意見：【${reviseText}】\n請調整並輸出完整 40 分鐘香港小學教案。垂直分數使用 $\\frac{a}{b}$。`;
-                    res = await callGeminiApi(prompt);
-                } else {
-                    // 離線修訂：直接在現有教案上方智慧融入修訂建議區塊
-                    await new Promise(r => setTimeout(r, 250));
-                    res = lessonPlanData + `\n\n### 📝 共同備課修訂增強要點（已融入課堂）：\n- **教研專項調整**：針對【${reviseText}】，在課堂發展階段強化實物直觀演示與操作步驟，加強小組互助評價機制。`;
-                }
-
-                lessonPlanData = res;
-                document.getElementById('part2Result').innerHTML = formatMarkdownSafe(res);
-                document.getElementById('part2ReviseInput').value = '';
-                triggerMathRender();
-                showToast('教案已根據您的建議更新！', 'success');
-            } catch (e) {
-                showToast(`修訂完成（離線模式）`, 'info');
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = '<i class="fa-solid fa-rotate"></i> 修訂教案';
-            }
-        }
-
-        async function generateWorksheet() {
-            const grade = document.getElementById('gradeSelect').value;
-            const topic = document.getElementById('topicInput').value.trim();
-            const btn = document.getElementById('btnPart3');
-
-            AudioKit.click();
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> 正在排版三層分層工作紙...';
-
-            const activeKey = getEffectiveKey();
-            try {
-                let res = "";
-                if (activeKey) {
-                    const prompt = `請為香港小學【${grade}】數學課題【${topic}】設計一份【三層分層課堂工作紙】：
-初階基礎題、中階生活情境應用題、高階思維挑戰與自擬題、參考答案與評分準則。垂直分數寫為 $\\frac{a}{b}$。`;
-                    res = await callGeminiApi(prompt);
-                } else {
-                    await new Promise(r => setTimeout(r, 250));
-                    res = generateOfflineContent(grade, topic, 'worksheet');
-                }
-
-                document.getElementById('part3Result').innerHTML = formatMarkdownSafe(res);
-                document.getElementById('part3Container').classList.remove('hidden');
-                triggerMathRender();
-                showToast('三層分層工作紙生成成功！', 'success');
-            } catch (e) {
-                const fallbackRes = generateOfflineContent(grade, topic, 'worksheet');
-                document.getElementById('part3Result').innerHTML = formatMarkdownSafe(fallbackRes);
-                document.getElementById('part3Container').classList.remove('hidden');
-                triggerMathRender();
-                showToast(`已載入標準分層工作紙！`, 'info');
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = '<i class="fa-solid fa-layer-group"></i> 一鍵生成三層分層工作紙 (垂直分數格式)';
-            }
-        }
-
-        async function generateExtension() {
-            const grade = document.getElementById('gradeSelect').value;
-            const topic = document.getElementById('topicInput').value.trim();
-            const btn = document.getElementById('btnPart4');
-
-            AudioKit.click();
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> 正在生成延伸溫習筆記...';
-
-            const activeKey = getEffectiveKey();
-            try {
-                let res = "";
-                if (activeKey) {
-                    const prompt = `請為香港小學【${grade}】數學課題【${topic}】設計課後延伸任務與精華溫習筆記：
-自主探究任務、重點溫習卡、防雷專區、親子5分鐘小挑戰。垂直分數為 $\\frac{a}{b}$。`;
-                    res = await callGeminiApi(prompt);
-                } else {
-                    await new Promise(r => setTimeout(r, 250));
-                    res = generateOfflineContent(grade, topic, 'extension');
-                }
-
-                document.getElementById('part4Result').innerHTML = formatMarkdownSafe(res);
-                document.getElementById('part4Container').classList.remove('hidden');
-                triggerMathRender();
-                showToast('延伸筆記已就緒！', 'success');
-            } catch (e) {
-                const fallbackRes = generateOfflineContent(grade, topic, 'extension');
-                document.getElementById('part4Result').innerHTML = formatMarkdownSafe(fallbackRes);
-                document.getElementById('part4Container').classList.remove('hidden');
-                triggerMathRender();
-                showToast(`已為您載入延伸學習任務！`, 'info');
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = '<i class="fa-solid fa-house-laptop"></i> 生成課後延伸任務與精華筆記頁';
-            }
-        }
-
-        /**
-         * 預設題庫 (以同分母分數加法為基礎，隨開即玩)
-         */
-        const PRESET_GAME_QUESTIONS = [
-            {
-                question: "計算：$\\frac{2}{7} + \\frac{3}{7} = ?$",
-                choices: ["$\\frac{5}{7}$", "$\\frac{5}{14}$", "$\\frac{6}{7}$", "$\\frac{1}{7}$"],
-                correctIndex: 0,
-                explanation: "同分母分數相加，分母保持不變（7），只需把分子相加：$2 + 3 = 5$，所以結果是 $\\frac{5}{7}$。"
-            },
-            {
-                question: "小明吃了 $\\frac{1}{8}$ 個薄餅，小華吃了 $\\frac{3}{8}$ 個，兩人共吃了幾分之幾？",
-                choices: ["$\\frac{4}{16}$", "$\\frac{1}{2}$", "$\\frac{4}{8}$ (未約簡)", "$\\frac{3}{8}$"],
-                correctIndex: 1,
-                explanation: "兩人共吃 $\\frac{1}{8} + \\frac{3}{8} = \\frac{4}{8}$。約簡後：分子分母同除以 4，等於 $\\frac{1}{2}$ 個薄餅！"
-            },
-            {
-                question: "計算：$\\frac{4}{9} + \\frac{5}{9} = ?$",
-                choices: ["$\\frac{9}{18}$", "$\\frac{9}{9}$ 也就是 1", "$\\frac{20}{9}$", "$\\frac{1}{9}$"],
-                correctIndex: 1,
-                explanation: "分子相加 $4 + 5 = 9$，結果是 $\\frac{9}{9}$，當分子與分母相等時，數值等於整數 1。"
-            },
-            {
-                question: "以下哪一個算式是正確的？",
-                choices: [
-                    "$\\frac{1}{5} + \\frac{2}{5} = \\frac{3}{10}$",
-                    "$\\frac{2}{6} + \\frac{3}{6} = \\frac{5}{6}$",
-                    "$\\frac{3}{4} + \\frac{1}{4} = \\frac{4}{8}$",
-                    "$\\frac{1}{3} + \\frac{1}{3} = \\frac{1}{6}$"
-                ],
-                correctIndex: 1,
-                explanation: "切記！分數相加時「分母絕對不可相加」！只有第二個選項保留分母 6，分子 $2+3=5$ 是正確的。"
-            },
-            {
-                question: "挑戰題：$\\frac{5}{12} + \\frac{?}{12} = \\frac{11}{12}$，問號處應填入什麼數字？",
-                choices: ["6", "5", "7", "16"],
-                correctIndex: 0,
-                explanation: "逆向思維：$5 + ? = 11$，所以 $? = 11 - 5 = 6$。答案是 6。"
-            }
-        ];
-
-        let currentGameQuestions = [...PRESET_GAME_QUESTIONS];
-        let currentQuestionIdx = 0;
-        let gameScore = 0;
-        let gameTimer = 20;
-        let timerInterval = null;
-        let questionAnswered = false;
-
-        function startPresetGame() {
-            currentGameQuestions = [...PRESET_GAME_QUESTIONS];
-            initGameSession();
-        }
-
-        function restartCurrentGame() {
-            initGameSession();
-        }
-
-        function initGameSession() {
-            currentQuestionIdx = 0;
-            gameScore = 0;
-            document.getElementById('gameOverScreen').classList.add('hidden');
-            document.getElementById('gameBox').classList.remove('hidden');
-            document.getElementById('gameChoicesGrid').classList.remove('hidden');
-            document.getElementById('gameFeedbackBox').classList.add('hidden');
-            renderGameQuestion();
-        }
-
-        function renderGameQuestion() {
-            clearInterval(timerInterval);
-            questionAnswered = false;
-            const q = currentGameQuestions[currentQuestionIdx];
-            if (!q) {
-                endGameSession();
-                return;
-            }
-
-            // 更新介面進度
-            const total = currentGameQuestions.length;
-            document.getElementById('gameProgressText').innerText = `第 ${currentQuestionIdx + 1} / ${total} 題`;
-            document.getElementById('gameScoreText').innerText = gameScore;
-            document.getElementById('gameProgressBar').style.width = `${((currentQuestionIdx + 1) / total) * 100}%`;
-            document.getElementById('gameQuestionText').innerHTML = q.question;
-            document.getElementById('gameFeedbackBox').classList.add('hidden');
-
-            // 倒數計時
-            gameTimer = 25;
-            document.getElementById('gameTimerText').innerText = `${gameTimer}s`;
-            timerInterval = setInterval(() => {
-                gameTimer--;
-                document.getElementById('gameTimerText').innerText = `${gameTimer}s`;
-                if (gameTimer <= 0) {
-                    clearInterval(timerInterval);
-                    handleAnswer(-1); // 超時
-                }
-            }, 1000);
-
-            // 生成選項按鈕
-            const grid = document.getElementById('gameChoicesGrid');
-            grid.innerHTML = '';
-            q.choices.forEach((choice, idx) => {
-                const btn = document.createElement('button');
-                btn.className = 'game-choice-btn py-3 px-4 rounded-2xl font-bold text-sm shadow-sm flex items-center justify-between text-left';
-                btn.innerHTML = `
-                    <span class="flex items-center gap-2">
-                        <span class="w-6 h-6 rounded-full bg-pink-100 text-pink-700 text-xs flex items-center justify-center font-black">${String.fromCharCode(65 + idx)}</span>
-                        <span>${choice}</span>
-                    </span>
-                    <i class="fa-regular fa-circle text-pink-300"></i>
-                `;
-                btn.onclick = () => handleAnswer(idx);
-                grid.appendChild(btn);
-            });
-
-            triggerMathRender();
-        }
-
-        function handleAnswer(selectedIndex) {
-            if (questionAnswered) return;
-            questionAnswered = true;
-            clearInterval(timerInterval);
-
-            const q = currentGameQuestions[currentQuestionIdx];
-            const choiceButtons = document.querySelectorAll('.game-choice-btn');
-            const feedbackBox = document.getElementById('gameFeedbackBox');
-            const feedbackStatus = document.getElementById('gameFeedbackStatus');
-            const feedbackExplanation = document.getElementById('gameFeedbackExplanation');
-
-            feedbackBox.classList.remove('hidden');
-
-            if (selectedIndex === q.correctIndex) {
-                AudioKit.correct();
-                gameScore += 20;
-                document.getElementById('gameScoreText').innerText = gameScore;
-                if (choiceButtons[selectedIndex]) {
-                    choiceButtons[selectedIndex].classList.add('correct');
-                    choiceButtons[selectedIndex].querySelector('i').className = 'fa-solid fa-circle-check text-emerald-600';
-                }
-                feedbackStatus.innerHTML = '<span class="text-emerald-600"><i class="fa-solid fa-face-smile-wink mr-1"></i> 答對了！太厲害了！(+20分)</span>';
-            } else {
-                AudioKit.wrong();
-                if (selectedIndex >= 0 && choiceButtons[selectedIndex]) {
-                    choiceButtons[selectedIndex].classList.add('wrong');
-                    choiceButtons[selectedIndex].querySelector('i').className = 'fa-solid fa-circle-xmark text-rose-600';
-                }
-                // 標記正確答案
-                if (choiceButtons[q.correctIndex]) {
-                    choiceButtons[q.correctIndex].classList.add('correct');
-                }
-                feedbackStatus.innerHTML = selectedIndex === -1
-                    ? '<span class="text-rose-600"><i class="fa-solid fa-clock mr-1"></i> 時間到！別氣餒，看看解題秘笈！</span>'
-                    : '<span class="text-rose-600"><i class="fa-solid fa-triangle-exclamation mr-1"></i> 哎呀答錯了！沒關係，釐清觀念更重要！</span>';
-            }
-
-            feedbackExplanation.innerHTML = `<strong>【沈老師點撥】：</strong>${q.explanation}`;
-            triggerMathRender();
-        }
-
-        function nextGameQuestion() {
-            AudioKit.click();
-            currentQuestionIdx++;
-            if (currentQuestionIdx < currentGameQuestions.length) {
-                renderGameQuestion();
-            } else {
-                endGameSession();
-            }
-        }
-
-        function endGameSession() {
-            clearInterval(timerInterval);
-            document.getElementById('gameChoicesGrid').classList.add('hidden');
-            document.getElementById('gameFeedbackBox').classList.add('hidden');
-            document.getElementById('gameQuestionText').innerHTML = '';
-            
-            const overScreen = document.getElementById('gameOverScreen');
-            overScreen.classList.remove('hidden');
-
-            const total = currentGameQuestions.length;
-            const summary = document.getElementById('gameOverSummary');
-            summary.innerHTML = `
-                恭喜完成挑戰！本次得分：<strong class="text-pink-600 text-lg font-black font-game">${gameScore}</strong> / ${total * 20} 分！<br>
-                ${gameScore === total * 20 ? '🎉 滿分通關！數學小博士非你莫屬！' : '👍 表現非常棒！再複習一下錯題，一定能奪得滿分！'}
-            `;
-            AudioKit.correct();
-        }
-
-        async function generateCustomGame() {
-            const grade = document.getElementById('gradeSelect').value;
-            const topic = document.getElementById('topicInput').value.trim();
-            const btn = document.getElementById('btnGenerateGame');
-
-            if (!topic) {
-                showToast('請先輸入課題！', 'warning');
-                return;
-            }
-
-            AudioKit.click();
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> 正在生成課堂遊戲題目...';
-
-            const activeKey = getEffectiveKey();
-
-            try {
-                let parsed = null;
-                if (activeKey) {
-                    const prompt = `請為香港小學【${grade}】數學課題【${topic}】設計5道生動有趣的【課堂互動選擇題】：
-嚴格輸出 JSON 陣列格式。每題含 question, choices(4項), correctIndex(0-3), explanation。垂直分數使用 $\\frac{a}{b}$。`;
-                    const resText = await callGeminiApi(prompt, true);
-                    try {
-                        parsed = JSON.parse(resText);
-                    } catch (e) {
-                        const match = resText.match(/\[\s*\{[\s\S]*\}\s*\]/);
-                        if (match) parsed = JSON.parse(match[0]);
-                    }
-                } else {
-                    // 免 API Key：調用離線遊戲題庫引擎
-                    await new Promise(r => setTimeout(r, 300));
-                    parsed = generateOfflineContent(grade, topic, 'game');
-                }
-
-                if (Array.isArray(parsed) && parsed.length > 0) {
-                    currentGameQuestions = parsed;
-                    initGameSession();
-                    showToast(`已生成課題【${topic}】的 5 道互動闖關題！`, 'success');
-                } else {
-                    throw new Error("題庫格式不正確");
-                }
-            } catch (e) {
-                // 自動無縫降級至離線題庫
-                currentGameQuestions = generateOfflineContent(grade, topic, 'game');
-                initGameSession();
-                showToast(`已為您無縫啟用離線遊戲題庫！`, 'info');
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = '<i class="fa-solid fa-dice text-yellow-300 mr-2"></i> 為此課題生成 AI 課堂闖關遊戲';
-            }
-        }
-
-        // 初始化加載
-        window.addEventListener('DOMContentLoaded', () => {
-            updateKeyStatusUI();
-            onGradeChange();
-            startPresetGame();
-        });
-    </script>
+      });
+    }
+
+    function drawGrid(team) {
+      const c = canvases[team];
+      const ctx = ctxs[team];
+      if (!c || !ctx) return;
+      ctx.save();
+      ctx.strokeStyle = '#e2e8f0';
+      ctx.lineWidth = 1;
+      const step = 20;
+      for (let x = step; x < c.width; x += step) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, c.height);
+        ctx.stroke();
+      }
+      for (let y = step; y < c.height; y += step) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(c.width, y);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    function startDraw(team, clientX, clientY) {
+      const c = canvases[team];
+      const ctx = ctxs[team];
+      const rect = c.getBoundingClientRect();
+      isDrawing[team] = true;
+      ctx.beginPath();
+      ctx.moveTo(clientX - rect.left, clientY - rect.top);
+    }
+
+    function moveDraw(team, clientX, clientY) {
+      if (!isDrawing[team]) return;
+      const c = canvases[team];
+      const ctx = ctxs[team];
+      const rect = c.getBoundingClientRect();
+      ctx.lineTo(clientX - rect.left, clientY - rect.top);
+      ctx.stroke();
+    }
+
+    function stopDraw(team) {
+      isDrawing[team] = false;
+    }
+
+    function clearScratch(team) {
+      const c = canvases[team];
+      const ctx = ctxs[team];
+      if (c && ctx) {
+        ctx.clearRect(0, 0, c.width, c.height);
+        drawGrid(team);
+      }
+    }
+
+    // 視窗大小改變時重設 Canvas 尺寸
+    window.addEventListener('resize', resizeCanvases);
+
+    // 初始化啟動
+    window.onload = function() {
+      renderKeypads();
+      initCanvases();
+      updateArenaUI();
+    };
+  </script>
 </body>
 </html>
